@@ -7,7 +7,7 @@ import { Pause, Play, SkipBack, SkipForward, Volume2, VolumeX } from "lucide-rea
 import StoryScene from "@/components/StoryScene";
 import { memories } from "@/data/memories";
 
-const milestoneDate = new Date(2026, 5, 17, 22, 50, 0);
+const milestoneDate = new Date(2026, 5, 18, 10, 0, 0);
 const relationshipStartDate = new Date("2022-12-18T00:00:00");
 const soundtrackSrc = "/soundtrack/our-song.mp3";
 const soundtrackTitle = "Nuestra cancion";
