@@ -20,6 +20,7 @@ type StorySceneProps = {
 
 type SceneCard = {
   group: THREE.Group;
+  targetPosition: THREE.Vector3;
 };
 
 type CountdownTileTexture = {
@@ -29,7 +30,37 @@ type CountdownTileTexture = {
   label: string;
 };
 
-const SECTION_GAP = 11.75;
+const SECTION_GAP = 10.9;
+const LETTER_SECTION_Y = -12.7;
+const COUNTDOWN_SECTION_Y = -SECTION_GAP * 2;
+const SOUNDTRACK_SECTION_Y = -SECTION_GAP * 3;
+const PHOTO_PLANE_WIDTH = 1.28;
+const PHOTO_PLANE_HEIGHT = 1.72;
+
+function fitTextureCover(
+  texture: THREE.Texture,
+  planeWidth: number,
+  planeHeight: number,
+) {
+  const image = texture.image as { width?: number; height?: number } | undefined;
+  const imageWidth = image?.width;
+  const imageHeight = image?.height;
+
+  if (!imageWidth || !imageHeight) {
+    return;
+  }
+
+  const imageAspect = imageWidth / imageHeight;
+  const planeAspect = planeWidth / planeHeight;
+
+  texture.center.set(0.5, 0.5);
+
+  if (imageAspect > planeAspect) {
+    texture.repeat.set(planeAspect / imageAspect, 1);
+  } else {
+    texture.repeat.set(1, imageAspect / planeAspect);
+  }
+}
 
 function drawRoundedRect(
   context: CanvasRenderingContext2D,
@@ -85,30 +116,6 @@ function wrapText(
   return lines;
 }
 
-function createLabelTexture(item: MemoryItem) {
-  const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 144;
-
-  const context = canvas.getContext("2d");
-  if (!context) {
-    return new THREE.CanvasTexture(canvas);
-  }
-
-  context.fillStyle = "#fef8f1";
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = "rgba(16, 12, 22, 0.72)";
-  context.font = "500 34px Georgia";
-  context.fillText(item.caption, 32, 58);
-  context.font = "600 18px Avenir Next, Arial";
-  context.fillStyle = "rgba(16, 12, 22, 0.42)";
-  context.fillText(item.date.toUpperCase(), 32, 104);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
-}
-
 function createPhotoTexture(item: MemoryItem) {
   const canvas = document.createElement("canvas");
   canvas.width = 768;
@@ -131,18 +138,27 @@ function createPhotoTexture(item: MemoryItem) {
   context.lineWidth = 2;
   context.strokeRect(42, 42, canvas.width - 84, canvas.height - 84);
 
-  context.fillStyle = "#fff8ef";
-  context.font = "600 28px Avenir Next, Arial";
-  context.fillText(item.date, 68, 110);
-  context.font = "500 58px Georgia";
-  context.fillText(item.caption, 68, canvas.height - 120);
-  context.font = "400 22px Avenir Next, Arial";
-  context.fillStyle = "rgba(255,248,239,0.84)";
-  context.fillText("Pon aqui su foto real", 68, canvas.height - 76);
-
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
+}
+
+function scheduleTextureLoad(callback: () => void, delay: number) {
+  const windowWithIdle = window as Window & {
+    requestIdleCallback?: (callback: IdleRequestCallback) => number;
+    cancelIdleCallback?: (handle: number) => void;
+  };
+
+  if (windowWithIdle.requestIdleCallback) {
+    const timeoutId = window.setTimeout(() => {
+      windowWithIdle.requestIdleCallback?.(callback, { timeout: 900 });
+    }, delay);
+
+    return () => window.clearTimeout(timeoutId);
+  }
+
+  const timeoutId = window.setTimeout(callback, delay);
+  return () => window.clearTimeout(timeoutId);
 }
 
 function createLetterTexture(paragraphs: string[], signature: string) {
@@ -170,13 +186,9 @@ function createLetterTexture(paragraphs: string[], signature: string) {
   context.lineWidth = 5;
   context.strokeRect(54, 54, canvas.width - 108, canvas.height - 108);
 
-  context.fillStyle = "#8f5a39";
-  context.font = "600 28px Avenir Next, Arial";
-  context.fillText("PARA ELLA", 110, 134);
-
   context.fillStyle = "#39271b";
   context.font = "500 106px Georgia";
-  context.fillText("Tu carta bonita.", 110, 244);
+  context.fillText("Princesa Hermosa :)", 110, 244);
 
   context.font = "400 40px Georgia";
   const maxWidth = canvas.width - 220;
@@ -236,7 +248,7 @@ function createEnvelopeTexture() {
   context.fillText("Toca para abrir", 100, 238);
   context.fillStyle = "rgba(74, 50, 36, 0.62)";
   context.font = "400 34px Georgia";
-  context.fillText("Hay una carta guardada aqui dentro.", 100, 308);
+  context.fillText("Hay una  guardada aqui dentro.", 100, 308);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -329,7 +341,7 @@ function paintCountdownTile(tile: CountdownTileTexture, value: string) {
 
   context.fillStyle = "rgba(255, 248, 239, 0.58)";
   context.font = "500 22px Avenir Next, Arial";
-  context.fillText("para su cumple mes", 54, 422);
+  context.fillText("juntos desde el 18 . 12 . 2022", 54, 422);
 
   texture.needsUpdate = true;
 }
@@ -358,8 +370,9 @@ export default function StoryScene({
       antialias: true,
       powerPreference: "high-performance",
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.35));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.sortObjects = true;
     mount.appendChild(renderer.domElement);
 
     const pointer = { x: 0, y: 0 };
@@ -379,6 +392,7 @@ export default function StoryScene({
     };
 
     const textures: THREE.Texture[] = [];
+    const cancelScheduledTextureLoads: Array<() => void> = [];
     const photoCards: SceneCard[] = [];
     const floatingPapers: THREE.Mesh[] = [];
     const countdownBars: THREE.Mesh[] = [];
@@ -421,10 +435,12 @@ export default function StoryScene({
     const warmLight = new THREE.PointLight("#ffbc78", 12, 42, 2);
     warmLight.position.set(0, 0, 7);
     const roseLight = new THREE.PointLight("#f09ccd", 4.5, 34, 2);
-    roseLight.position.set(5, -SECTION_GAP, 4);
+    roseLight.position.set(5, LETTER_SECTION_Y, 4);
     const coolLight = new THREE.PointLight("#8cb7ff", 4.2, 34, 2);
-    coolLight.position.set(-4.5, -SECTION_GAP * 2, 5);
-    scene.add(ambient, warmLight, roseLight, coolLight);
+    coolLight.position.set(-4.5, COUNTDOWN_SECTION_Y, 5);
+    const soundtrackLight = new THREE.PointLight("#1ed760", 3.8, 34, 2);
+    soundtrackLight.position.set(4.5, SOUNDTRACK_SECTION_Y, 5);
+    scene.add(ambient, warmLight, roseLight, coolLight, soundtrackLight);
 
     const starGeometry = new THREE.BufferGeometry();
     const starCount = 820;
@@ -433,7 +449,7 @@ export default function StoryScene({
     for (let index = 0; index < starCount; index += 1) {
       const i = index * 3;
       starPositions[i] = (Math.random() - 0.5) * 28;
-      starPositions[i + 1] = -SECTION_GAP + (Math.random() - 0.5) * 52;
+      starPositions[i + 1] = -SECTION_GAP * 1.5 + (Math.random() - 0.5) * 70;
       starPositions[i + 2] = -4 - Math.random() * 18;
     }
 
@@ -453,18 +469,27 @@ export default function StoryScene({
     scene.add(stars);
 
     const loader = new THREE.TextureLoader();
-    const displayItems = items.slice(0, Math.min(items.length, 10));
-    const laneHeights = [1.14, -1.08, 0.58, -0.52, 1.74, -1.68, 0, 1.34, -1.28, 0.96];
-    const radiusXMap = [2.5, 3, 3.5, 2.8, 3.8, 3.2, 2.1, 4.1, 3.6, 2.9];
-    const radiusZMap = [4.5, 5, 5.4, 4.8, 6, 5.3, 3.9, 6.3, 5.7, 4.4];
+    const displayItems = items;
+    const photoColumns = 4;
+    const photoRowGap = 1.92;
+    const photoCloudTop = 5.15;
+    const orbitCenterXMap = [-2.65, 0, 2.65, -1.32, 1.32, 0.42, -0.42];
+    const orbitRadiusXMap = [1.16, 1.42, 1.08, 1.28, 1.52, 1.22, 1.36];
+    const orbitRadiusYMap = [0.62, 0.78, 0.58, 0.72, 0.86, 0.66, 0.74];
+    const baseZMap = [0.18, -0.32, 0.08, -0.42, 0.28, -0.18, 0.02, -0.28];
     const tiltMap = [0.14, -0.12, 0.06, -0.16, 0.1, -0.08, 0, 0.12, -0.1, 0.04];
 
     displayItems.forEach((item, index) => {
+      const row = Math.floor(index / photoColumns);
+      const orbit = index % orbitCenterXMap.length;
       const group = new THREE.Group();
-      group.userData.baseY = laneHeights[index % laneHeights.length];
-      group.userData.radiusX = radiusXMap[index % radiusXMap.length];
-      group.userData.radiusZ = radiusZMap[index % radiusZMap.length];
-      group.userData.speed = 0.14 + index * 0.012;
+      group.userData.centerX = orbitCenterXMap[orbit];
+      group.userData.centerY = photoCloudTop - row * photoRowGap;
+      group.userData.baseZ = baseZMap[index % baseZMap.length];
+      group.userData.orbitRadiusX = orbitRadiusXMap[orbit];
+      group.userData.orbitRadiusY = orbitRadiusYMap[orbit];
+      group.userData.floatZ = 0.08 + (index % 5) * 0.02;
+      group.userData.speed = 0.14 + (index % 8) * 0.009;
       group.userData.offset = (index / displayItems.length) * Math.PI * 2;
       group.userData.tilt = tiltMap[index % tiltMap.length];
 
@@ -478,6 +503,7 @@ export default function StoryScene({
         }),
       );
       glow.position.z = -0.08;
+      glow.renderOrder = index * 10;
       group.add(glow);
 
       const shell = new THREE.Mesh(
@@ -490,45 +516,46 @@ export default function StoryScene({
           clearcoatRoughness: 0.08,
         }),
       );
+      shell.renderOrder = index * 10 + 1;
       group.add(shell);
 
       const photoTexture = createPhotoTexture(item);
       textures.push(photoTexture);
-      const photoMaterial = new THREE.MeshBasicMaterial({ map: photoTexture });
+      const photoMaterial = new THREE.MeshBasicMaterial({
+        map: photoTexture,
+        transparent: false,
+      });
       const photo = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.16, 1.24),
+        new THREE.PlaneGeometry(PHOTO_PLANE_WIDTH, PHOTO_PLANE_HEIGHT),
         photoMaterial,
       );
-      photo.position.set(0, 0.16, 0.02);
+      photo.position.set(0, 0, 0.02);
+      photo.renderOrder = index * 10 + 2;
       group.add(photo);
 
-      const labelTexture = createLabelTexture(item);
-      textures.push(labelTexture);
-      const label = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.98, 0.26),
-        new THREE.MeshBasicMaterial({
-          map: labelTexture,
-          transparent: true,
-        }),
-      );
-      label.position.set(0, -0.62, 0.02);
-      group.add(label);
-
       if (item.src) {
-        loader.load(item.src, (texture) => {
-          texture.colorSpace = THREE.SRGBColorSpace;
-          textures.push(texture);
-          photoMaterial.map = texture;
-          photoMaterial.needsUpdate = true;
-        });
+        const photoSrc = item.src;
+        const cancelTextureLoad = scheduleTextureLoad(() => {
+          loader.load(photoSrc, (texture) => {
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.generateMipmaps = false;
+            texture.minFilter = THREE.LinearFilter;
+            fitTextureCover(texture, PHOTO_PLANE_WIDTH, PHOTO_PLANE_HEIGHT);
+            textures.push(texture);
+            photoMaterial.map = texture;
+            photoMaterial.needsUpdate = true;
+          });
+        }, index * 95);
+
+        cancelScheduledTextureLoads.push(cancelTextureLoad);
       }
 
       scene.add(group);
-      photoCards.push({ group });
+      photoCards.push({ group, targetPosition: new THREE.Vector3() });
     });
 
     const letterGroup = new THREE.Group();
-    letterGroup.position.set(0, -SECTION_GAP, 0);
+    letterGroup.position.set(0, LETTER_SECTION_Y, 0);
     scene.add(letterGroup);
 
     const letterAura = new THREE.Mesh(
@@ -633,12 +660,12 @@ export default function StoryScene({
     const paperGeometry = new THREE.PlaneGeometry(1.24, 1.62);
     for (let index = 0; index < 18; index += 1) {
       let baseX = (Math.random() - 0.5) * 10;
-      let baseY = -SECTION_GAP + (Math.random() - 0.5) * 4.5;
+      let baseY = LETTER_SECTION_Y + (Math.random() - 0.5) * 4.5;
 
       // Keep the center of the letter scene clear so floating scraps never cover the card.
-      while (Math.abs(baseX) < 3 && Math.abs(baseY + SECTION_GAP) < 3.4) {
+      while (Math.abs(baseX) < 3 && Math.abs(baseY - LETTER_SECTION_Y) < 3.4) {
         baseX = (Math.random() - 0.5) * 10;
-        baseY = -SECTION_GAP + (Math.random() - 0.5) * 4.5;
+        baseY = LETTER_SECTION_Y + (Math.random() - 0.5) * 4.5;
       }
 
       const paper = new THREE.Mesh(
@@ -670,7 +697,7 @@ export default function StoryScene({
     }
 
     const countdownGroup = new THREE.Group();
-    countdownGroup.position.set(0, -SECTION_GAP * 2, 0);
+    countdownGroup.position.set(0, COUNTDOWN_SECTION_Y, 0);
     scene.add(countdownGroup);
 
     const countdownHeaderTexture = createCountdownHeaderTexture();
@@ -747,7 +774,7 @@ export default function StoryScene({
       );
       bar.position.set(
         Math.cos(angle) * radius,
-        -SECTION_GAP * 2 + (Math.random() - 0.5) * 1.6,
+        COUNTDOWN_SECTION_Y + (Math.random() - 0.5) * 1.6,
         Math.sin(angle) * radius * 0.74,
       );
       bar.rotation.z = angle * 0.5;
@@ -767,8 +794,6 @@ export default function StoryScene({
         paintCountdownTile(tile.texture, value);
       });
     };
-    countdownUpdaterRef.current(countdown);
-
     const resize = () => {
       const width = mount.clientWidth;
       const height = mount.clientHeight;
@@ -783,7 +808,7 @@ export default function StoryScene({
 
       layoutState.letterScale = isPhoneLike ? 0.5 : 0.84;
       layoutState.countdownScale = isPhoneLike ? 0.56 : 0.92;
-      layoutState.photoSpread = isPhoneLike ? 0.88 : 1;
+      layoutState.photoSpread = isPhoneLike ? 0.72 : 1;
 
       letterGroup.scale.setScalar(layoutState.letterScale);
       letterGroup.position.x = isPhoneLike ? 0 : 0;
@@ -841,6 +866,7 @@ export default function StoryScene({
 
     let frameId = 0;
     const startTime = performance.now();
+    const separationDelta = new THREE.Vector3();
 
     const renderLoop = () => {
       const elapsed = (performance.now() - startTime) / 1000;
@@ -852,45 +878,69 @@ export default function StoryScene({
       camera.position.x += (0 - camera.position.x) * 0.08;
       camera.rotation.z += (0 - camera.rotation.z) * 0.08;
       camera.rotation.x += (0 - camera.rotation.x) * 0.08;
+      const safeHorizontalLimit = layoutState.isPhoneLike ? 3.05 : 4.55;
 
-      const targetPositions = photoCards.map((card, index) => {
+      photoCards.forEach((card, index) => {
         const angle =
           elapsed * card.group.userData.speed + card.group.userData.offset;
+        const nextX =
+          (card.group.userData.centerX +
+            Math.cos(angle) * card.group.userData.orbitRadiusX) *
+          layoutState.photoSpread;
 
-        return new THREE.Vector3(
-          Math.cos(angle) * card.group.userData.radiusX * layoutState.photoSpread,
-          card.group.userData.baseY +
-            Math.sin(elapsed * 1.1 + index * 0.7) * 0.18,
-          Math.sin(angle) * card.group.userData.radiusZ * layoutState.photoSpread,
+        card.targetPosition.set(
+          THREE.MathUtils.clamp(nextX, -safeHorizontalLimit, safeHorizontalLimit),
+          card.group.userData.centerY +
+            Math.sin(angle + index * 0.14) * card.group.userData.orbitRadiusY,
+          card.group.userData.baseZ +
+            Math.sin(angle * 0.9) * card.group.userData.floatZ,
         );
       });
 
-      for (let i = 0; i < targetPositions.length; i += 1) {
-        for (let j = i + 1; j < targetPositions.length; j += 1) {
-          const delta = targetPositions[i].clone().sub(targetPositions[j]);
-          const distance = delta.length();
-          const minimumDistance = 1.52;
+      for (let i = 0; i < photoCards.length; i += 1) {
+        for (let j = i + 1; j < photoCards.length; j += 1) {
+          separationDelta
+            .copy(photoCards[i].targetPosition)
+            .sub(photoCards[j].targetPosition);
+          const distance = separationDelta.length();
+          const minimumDistance = layoutState.isPhoneLike ? 1.78 : 2.02;
 
           if (distance < minimumDistance) {
-            const safeDelta =
-              distance < 0.001
-                ? new THREE.Vector3(0.2, 0.1, 0)
-                : delta.normalize();
+            if (distance < 0.001) {
+              separationDelta.set(0.2, 0.1, 0).normalize();
+            } else {
+              separationDelta.normalize();
+            }
+
             const push = (minimumDistance - distance) * 0.5;
-            targetPositions[i].addScaledVector(safeDelta, push);
-            targetPositions[j].addScaledVector(safeDelta, -push);
+            photoCards[i].targetPosition.addScaledVector(separationDelta, push);
+            photoCards[j].targetPosition.addScaledVector(separationDelta, -push);
           }
         }
       }
 
-      photoCards.forEach((card, index) => {
-        const targetPosition = targetPositions[index];
-        card.group.position.lerp(targetPosition, 0.1);
+      photoCards.forEach((card) => {
+        card.targetPosition.x = THREE.MathUtils.clamp(
+          card.targetPosition.x,
+          -safeHorizontalLimit,
+          safeHorizontalLimit,
+        );
+      });
+
+      photoCards.forEach((card) => {
+        card.group.position.lerp(card.targetPosition, 0.1);
+        card.group.renderOrder = Math.round((card.group.position.z + 8) * 100);
         card.group.rotation.y +=
-          (card.group.userData.tilt + pointerFollow.x * 0.08 - card.group.rotation.y) *
+          (card.group.userData.tilt * 0.7 +
+            Math.sin(elapsed * 0.7 + card.group.userData.offset) * 0.06 +
+            pointerFollow.x * 0.045 -
+            card.group.rotation.y) *
           0.08;
         card.group.rotation.x +=
-          (pointerFollow.y * 0.035 - card.group.rotation.x) * 0.08;
+          (Math.cos(elapsed * 0.62 + card.group.userData.offset) * 0.035 +
+            pointerFollow.y * 0.035 -
+            card.group.rotation.x) *
+          0.08;
       });
 
       letterState.current += (letterState.target - letterState.current) * 0.08;
@@ -935,7 +985,7 @@ export default function StoryScene({
       seal.position.z = THREE.MathUtils.lerp(0.18, -0.08, letterOpen);
 
       floatingPapers.forEach((paper, index) => {
-        const distanceFromLetter = Math.abs(paper.userData.baseY + SECTION_GAP);
+        const distanceFromLetter = Math.abs(paper.userData.baseY - LETTER_SECTION_Y);
         paper.position.x =
           paper.userData.baseX +
           Math.sin(elapsed * paper.userData.speed + paper.userData.offset) * 0.35;
@@ -945,7 +995,7 @@ export default function StoryScene({
         paper.rotation.z += 0.0015 + index * 0.00005;
         const isTooCloseToCard =
           Math.abs(paper.position.x) < 3.2 &&
-          Math.abs(paper.position.y + SECTION_GAP) < 3.6;
+          Math.abs(paper.position.y - LETTER_SECTION_Y) < 3.6;
         (paper.material as THREE.MeshPhysicalMaterial).opacity = isTooCloseToCard
           ? 0
           : distanceFromLetter < 2.4
@@ -984,6 +1034,7 @@ export default function StoryScene({
 
     return () => {
       countdownUpdaterRef.current = null;
+      cancelScheduledTextureLoads.forEach((cancelTextureLoad) => cancelTextureLoad());
       window.cancelAnimationFrame(frameId);
       window.removeEventListener("resize", resize);
       window.removeEventListener("scroll", onScroll);

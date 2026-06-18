@@ -2,24 +2,97 @@
 
 import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import { Pause, Play, SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
 import StoryScene from "@/components/StoryScene";
 import { memories } from "@/data/memories";
 
-const milestoneDate = new Date("2026-06-18T00:00:00");
+const milestoneDate = new Date(2026, 5, 18, 18, 0, 0);
 const relationshipStartDate = new Date("2022-12-18T00:00:00");
 const soundtrackSrc = "/soundtrack/our-song.mp3";
-const soundtrackCoverSrc = "/soundtrack/cover.jpg";
 const soundtrackTitle = "Nuestra cancion";
 const soundtrackArtist = "Tu artista aqui";
+const spotifyLogoSrc = "/spotify-full-logo-white.png";
+
+type SpotifyTrackMetadata = {
+  album: {
+    name: string;
+    releaseDate: string | null;
+    spotifyUrl: string | null;
+  };
+  artistName: string;
+  artists: Array<{
+    name: string;
+    spotifyUrl: string | null;
+  }>;
+  configured: true;
+  cover: {
+    height: number | null;
+    url: string;
+    width: number | null;
+  } | null;
+  durationMs: number;
+  durationText: string;
+  id: string;
+  name: string;
+  previewUrl: string | null;
+  spotifyUrl: string | null;
+  uri: string;
+};
+
+type SpotifyTrackApiResponse =
+  | SpotifyTrackMetadata
+  | {
+      configured: false;
+      error: string;
+    }
+  | {
+      configured: true;
+      error: string;
+    };
+
+type SpotifyPlaylistTrack = {
+  artistName: string;
+  cover: {
+    height: number | null;
+    url: string;
+    width: number | null;
+  } | null;
+  durationMs: number;
+  durationText: string;
+  id: string | null;
+  isLocal: boolean;
+  name: string;
+  spotifyUrl: string | null;
+  uri: string;
+};
+
+type SpotifyPlaylistMetadata = {
+  configured: true;
+  id: string;
+  name: string;
+  ownerName: string | null;
+  spotifyUrl: string | null;
+  totalTracks: number;
+  tracks: SpotifyPlaylistTrack[];
+};
+
+type SpotifyPlaylistApiResponse =
+  | SpotifyPlaylistMetadata
+  | {
+      configured: false;
+      error: string;
+    }
+  | {
+      configured: true;
+      error: string;
+    };
 
 const letterDraft = [
-  "[Escribe aqui como comenzo todo y que fue lo primero que sentiste por ella.]",
-  "[Aqui puedes poner una anecdota o un recuerdo que siempre quieras que ella vuelva a leer.]",
-  "[Y aqui deja el mensaje final, promesa o dedicatoria que quieres que quede guardada en su pagina.]",
+  "Holii preciosa, bueno esta carta es un poco diferente a las que generalmente te escribo pero bueno quiero que sepas eres el amor de mi vida y sabes que siempre te voy a amar con todo mi corazon, te pido perdon por todos los problemas que se pueden llegar a dar pero sabes que siempre voy a poner de parte para resolver cualquier cosa, gracias por tenerme tanta paciencia, yo se que aveces mi humor no es el mejor pero te agradezco que siempre estes ahi para mi, gracias por ser tan linda conmigo, por apoyarme en todo lo que hago, por entenderme y por ser la novia mas linda del mundo, me encanta cada cosa de ti y cada dia me enamoro mas de ti, gracias por hacerme tan feliz y por dejarme ser parte de tu vida, te amo mucho mi amor y espero que podamos seguir celebrando muchos meses mas juntos. Felices 42 meses mi amooor 👩🏿‍⚕️😽❤️",
 ];
 
-const DEV_FORCE_UNLOCK = true;
-const introHeadlineWords = ["Falta", "poquito", "para", "nuestro", "cumple", "mes."];
+const DEV_FORCE_UNLOCK = process.env.NEXT_PUBLIC_FORCE_UNLOCK === "true";
 
 const introPageStyle: CSSProperties = {
   minHeight: "100svh",
@@ -37,16 +110,6 @@ const introHeroStyle: CSSProperties = {
     "calc(1.5rem + env(safe-area-inset-top)) 1.1rem calc(1.75rem + env(safe-area-inset-bottom))",
   overflow: "hidden",
   justifyItems: "center",
-};
-
-const introCopyStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  display: "grid",
-  gap: "0.65rem",
-  maxWidth: "42rem",
-  justifyItems: "center",
-  textAlign: "center",
 };
 
 const introCountdownStyle: CSSProperties = {
@@ -171,6 +234,30 @@ function getTogetherParts(now: Date | null) {
   };
 }
 
+function getMilestoneCountdownParts(now: Date | null) {
+  if (!now) {
+    return {
+      days: "--",
+      hours: "--",
+      minutes: "--",
+      seconds: "--",
+    };
+  }
+
+  const remainingMs = Math.max(milestoneDate.getTime() - now.getTime(), 0);
+  const days = Math.floor(remainingMs / 86400000);
+  const hours = Math.floor((remainingMs % 86400000) / 3600000);
+  const minutes = Math.floor((remainingMs % 3600000) / 60000);
+  const seconds = Math.floor((remainingMs % 60000) / 1000);
+
+  return {
+    days: String(days).padStart(2, "0"),
+    hours: String(hours).padStart(2, "0"),
+    minutes: String(minutes).padStart(2, "0"),
+    seconds: String(seconds).padStart(2, "0"),
+  };
+}
+
 function isMilestoneReached(now: Date | null) {
   if (!now) {
     return false;
@@ -195,11 +282,46 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [trackProgress, setTrackProgress] = useState(0);
   const [trackDuration, setTrackDuration] = useState(0);
+  const [volume, setVolume] = useState(0.75);
+  const [hasSoundtrackCover, setHasSoundtrackCover] = useState(true);
+  const [isSoundtrackVisible, setIsSoundtrackVisible] = useState(false);
+  const [spotifyTrack, setSpotifyTrack] = useState<SpotifyTrackMetadata | null>(null);
+  const [spotifyPlaylist, setSpotifyPlaylist] =
+    useState<SpotifyPlaylistMetadata | null>(null);
 
   const together = getTogetherParts(now);
+  const milestoneCountdown = getMilestoneCountdownParts(now);
   const milestoneReached = isMilestoneReached(now);
   const canEnter = DEV_FORCE_UNLOCK || milestoneReached;
+  const displayedSoundtrackArtist = spotifyTrack?.artistName || soundtrackArtist;
+  const displayedSoundtrackCover = spotifyTrack?.cover?.url ?? null;
+  const displayedSoundtrackTitle = spotifyTrack?.name || soundtrackTitle;
+  const displayedTrackDurationLabel =
+    spotifyTrack?.durationText || formatClock(trackDuration);
+  const displayedPlaylistTracks = spotifyPlaylist?.tracks.length
+    ? spotifyPlaylist.tracks
+    : [
+        {
+          artistName: displayedSoundtrackArtist,
+          cover: displayedSoundtrackCover
+            ? {
+                height: null,
+                url: displayedSoundtrackCover,
+                width: null,
+              }
+            : null,
+          durationMs: spotifyTrack?.durationMs ?? trackDuration * 1000,
+          durationText: displayedTrackDurationLabel,
+          id: spotifyTrack?.id ?? null,
+          isLocal: false,
+          name: displayedSoundtrackTitle,
+          spotifyUrl: spotifyTrack?.spotifyUrl ?? null,
+          uri: spotifyTrack?.uri ?? "",
+        },
+      ];
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const shouldAutoplayOnEnterRef = useRef(false);
+  const soundtrackSectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const tick = () => {
@@ -216,6 +338,106 @@ export default function Home() {
       window.scrollTo(0, 0);
     }
   }, [entered]);
+
+  useEffect(() => {
+    if (!entered || spotifyTrack) {
+      return;
+    }
+
+    let isMounted = true;
+
+    fetch("/api/spotify/track")
+      .then(async (response) => {
+        const data = (await response.json()) as SpotifyTrackApiResponse;
+
+        if (!isMounted || !response.ok || !data.configured || "error" in data) {
+          if ("error" in data) {
+            console.info("Spotify metadata fallback:", data.error);
+          }
+          return;
+        }
+
+        setSpotifyTrack(data);
+        setHasSoundtrackCover(Boolean(data.cover?.url));
+      })
+      .catch(() => {
+        // Keep local fallback metadata when Spotify is not configured or unavailable.
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [entered, spotifyTrack]);
+
+  useEffect(() => {
+    if (!entered || spotifyPlaylist) {
+      return;
+    }
+
+    let isMounted = true;
+
+    fetch("/api/spotify/playlist")
+      .then(async (response) => {
+        const data = (await response.json()) as SpotifyPlaylistApiResponse;
+
+        if (!isMounted || !response.ok || !data.configured || "error" in data) {
+          if ("error" in data) {
+            console.info("Spotify playlist fallback:", data.error);
+          }
+          return;
+        }
+
+        setSpotifyPlaylist(data);
+      })
+      .catch(() => {
+        // Keep the hand-written queue when Spotify playlist metadata is unavailable.
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [entered, spotifyPlaylist]);
+
+  useEffect(() => {
+    if (!entered) {
+      return;
+    }
+
+    const updateSoundtrackVisibility = () => {
+      const section = soundtrackSectionRef.current;
+
+      if (!section) {
+        return;
+      }
+
+      const rect = section.getBoundingClientRect();
+      const revealLine = window.innerHeight * 0.28;
+      const hideLine = window.innerHeight * 0.55;
+
+      setIsSoundtrackVisible((current) =>
+        current ? rect.top < hideLine : rect.top < revealLine,
+      );
+    };
+
+    updateSoundtrackVisibility();
+    window.addEventListener("scroll", updateSoundtrackVisibility, { passive: true });
+    window.addEventListener("resize", updateSoundtrackVisibility);
+
+    return () => {
+      window.removeEventListener("scroll", updateSoundtrackVisibility);
+      window.removeEventListener("resize", updateSoundtrackVisibility);
+    };
+  }, [entered]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+
+    if (!audio) {
+      return;
+    }
+
+    audio.volume = volume;
+  }, [entered, volume]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -247,6 +469,34 @@ export default function Home() {
       audio.removeEventListener("ended", onEnded);
     };
   }, [entered]);
+
+  useEffect(() => {
+    if (!entered || !shouldAutoplayOnEnterRef.current) {
+      return;
+    }
+
+    const audio = audioRef.current;
+
+    if (!audio) {
+      return;
+    }
+
+    shouldAutoplayOnEnterRef.current = false;
+    audio.volume = volume;
+
+    const playTimer = window.setTimeout(() => {
+      audio
+        .play()
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch(() => {
+          setIsPlaying(false);
+        });
+    }, 180);
+
+    return () => window.clearTimeout(playTimer);
+  }, [entered, volume]);
 
   const togglePlayback = async () => {
     const audio = audioRef.current;
@@ -281,35 +531,30 @@ export default function Home() {
     setTrackProgress(nextValue);
   };
 
+  const handleVolumeChange = (value: string) => {
+    const nextValue = Number(value);
+
+    if (Number.isNaN(nextValue)) {
+      return;
+    }
+
+    setVolume(Math.min(Math.max(nextValue, 0), 1));
+  };
+
+  const trackProgressPercent =
+    trackDuration > 0 ? Math.min((trackProgress / trackDuration) * 100, 100) : 0;
+
+  const spotifyProgressStyle = {
+    "--spotify-progress": `${trackProgressPercent}%`,
+  } as CSSProperties;
+
+  const spotifyVolumeStyle = {
+    "--spotify-volume": `${volume * 100}%`,
+  } as CSSProperties;
+
   if (!entered) {
     return (
       <main style={introPageStyle}>
-        <style>{`
-          @keyframes introWordFloat {
-            0%, 100% {
-              transform: translate3d(0, 0, 0);
-              opacity: 0.9;
-            }
-            50% {
-              transform: translate3d(0, -10px, 0);
-              opacity: 1;
-            }
-          }
-
-          @keyframes introWordReveal {
-            0% {
-              opacity: 0;
-              transform: translate3d(0, 22px, 0) scale(0.985);
-              filter: blur(8px);
-            }
-            100% {
-              opacity: 1;
-              transform: translate3d(0, 0, 0) scale(1);
-              filter: blur(0);
-            }
-          }
-        `}</style>
-
         <section style={introHeroStyle}>
           <div
             aria-hidden="true"
@@ -354,58 +599,6 @@ export default function Home() {
             }}
           />
 
-          <div style={introCopyStyle}>
-            <p
-              style={{
-                margin: 0,
-                color: "rgba(255, 217, 182, 0.82)",
-                textTransform: "uppercase",
-                letterSpacing: "0.2em",
-                fontSize: "0.72rem",
-              }}
-            >
-              18 de junio
-            </p>
-            <h1
-              style={{
-                margin: 0,
-                fontFamily:
-                  '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", "URW Palladio L", Georgia, serif',
-                fontSize: "clamp(2.5rem, 8vw, 5.4rem)",
-                lineHeight: 0.94,
-                maxWidth: "11ch",
-                textWrap: "balance",
-              }}
-            >
-              {introHeadlineWords.map((word, index) => (
-                <span
-                  key={word}
-                  style={{
-                    display: "inline-block",
-                    marginRight: index === introHeadlineWords.length - 1 ? 0 : "0.22em",
-                    animation:
-                      `introWordReveal 700ms cubic-bezier(0.2, 0.8, 0.2, 1) ${index * 90}ms both, ` +
-                      `introWordFloat ${3.6 + index * 0.18}s ease-in-out ${0.9 + index * 0.08}s infinite`,
-                    willChange: "transform, opacity",
-                  }}
-                >
-                  {word}
-                </span>
-              ))}
-            </h1>
-            <p
-              style={{
-                margin: 0,
-                maxWidth: "24rem",
-                color: "rgba(255, 248, 239, 0.72)",
-                fontSize: "0.96rem",
-                lineHeight: 1.5,
-              }}
-            >
-              Mira cuanto tiempo llevamos juntos. Luego abres tu sorpresa.
-            </p>
-          </div>
-
           <div style={introCountdownStyle} aria-live="polite">
             <article style={introTileStyle()}>
               <span
@@ -417,55 +610,7 @@ export default function Home() {
                   lineHeight: 0.9,
                 }}
               >
-                {together.years}
-              </span>
-              <p
-                style={{
-                  margin: "0.4rem 0 0",
-                  color: "rgba(255, 248, 239, 0.62)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.16em",
-                  fontSize: "0.7rem",
-                }}
-              >
-                Anos
-              </p>
-            </article>
-            <article style={introTileStyle()}>
-              <span
-                style={{
-                  display: "block",
-                  fontFamily:
-                    '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", "URW Palladio L", Georgia, serif',
-                  fontSize: "clamp(2.2rem, 5vw, 3.5rem)",
-                  lineHeight: 0.9,
-                }}
-              >
-                {together.months}
-              </span>
-              <p
-                style={{
-                  margin: "0.4rem 0 0",
-                  color: "rgba(255, 248, 239, 0.62)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.16em",
-                  fontSize: "0.7rem",
-                }}
-              >
-                Meses
-              </p>
-            </article>
-            <article style={introTileStyle()}>
-              <span
-                style={{
-                  display: "block",
-                  fontFamily:
-                    '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", "URW Palladio L", Georgia, serif',
-                  fontSize: "clamp(2.2rem, 5vw, 3.5rem)",
-                  lineHeight: 0.9,
-                }}
-              >
-                {together.days}
+                {milestoneCountdown.days}
               </span>
               <p
                 style={{
@@ -489,7 +634,7 @@ export default function Home() {
                   lineHeight: 0.9,
                 }}
               >
-                {together.hours}
+                {milestoneCountdown.hours}
               </span>
               <p
                 style={{
@@ -501,6 +646,54 @@ export default function Home() {
                 }}
               >
                 Horas
+              </p>
+            </article>
+            <article style={introTileStyle()}>
+              <span
+                style={{
+                  display: "block",
+                  fontFamily:
+                    '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", "URW Palladio L", Georgia, serif',
+                  fontSize: "clamp(2.2rem, 5vw, 3.5rem)",
+                  lineHeight: 0.9,
+                }}
+              >
+                {milestoneCountdown.minutes}
+              </span>
+              <p
+                style={{
+                  margin: "0.4rem 0 0",
+                  color: "rgba(255, 248, 239, 0.62)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.16em",
+                  fontSize: "0.7rem",
+                }}
+              >
+                Min
+              </p>
+            </article>
+            <article style={introTileStyle()}>
+              <span
+                style={{
+                  display: "block",
+                  fontFamily:
+                    '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", "URW Palladio L", Georgia, serif',
+                  fontSize: "clamp(2.2rem, 5vw, 3.5rem)",
+                  lineHeight: 0.9,
+                }}
+              >
+                {milestoneCountdown.seconds}
+              </span>
+              <p
+                style={{
+                  margin: "0.4rem 0 0",
+                  color: "rgba(255, 248, 239, 0.62)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.16em",
+                  fontSize: "0.7rem",
+                }}
+              >
+                Seg
               </p>
             </article>
           </div>
@@ -516,12 +709,13 @@ export default function Home() {
             }}
             onClick={() => {
               if (canEnter) {
+                shouldAutoplayOnEnterRef.current = true;
                 setEntered(true);
               }
             }}
             disabled={!canEnter}
           >
-            {canEnter ? "Abrir sorpresa" : "Se abre el 18 de junio"}
+            {canEnter ? "Abrir sorpresa" : "Se abre el 18 de junio a las 6:00 PM"}
           </button>
         </section>
       </main>
@@ -530,13 +724,13 @@ export default function Home() {
 
   return (
     <main className="story-page">
-      <audio ref={audioRef} preload="metadata" src={soundtrackSrc} />
+      <audio ref={audioRef} preload="auto" src={soundtrackSrc} />
 
       <div className="story-scene-layer" aria-hidden="true">
         <StoryScene
           items={memories}
           letterParagraphs={letterDraft}
-          signature="Con amor, tu ingeniero."
+          signature="Con amor, tu lokitoo 🦅"
           countdown={together}
         />
       </div>
@@ -545,36 +739,140 @@ export default function Home() {
       <section className="story-section story-section--spacer" />
       <section className="story-section story-section--spacer" />
 
-      <section className="story-section story-section--soundtrack">
+      <section
+        ref={soundtrackSectionRef}
+        className="story-section story-section--soundtrack"
+      >
         <div className="soundtrack-wrap">
-          <article className="spotify-card">
-            <div className="spotify-art">
-              <img
-                src={soundtrackCoverSrc}
-                alt="Portada de la cancion"
-                className="spotify-art-image"
-              />
+          <article
+            className={`spotify-card ${
+              isSoundtrackVisible ? "spotify-card--visible" : ""
+            }`}
+            aria-label="Reproductor de Spotify"
+          >
+            <div className="spotify-window-bar" aria-hidden="true">
+              <span />
+              <span />
+              <span />
             </div>
 
-            <div className="spotify-meta">
-              <p className="spotify-kicker">Nuestra cancion</p>
-              <h3>{soundtrackTitle}</h3>
-              <p className="spotify-artist">{soundtrackArtist}</p>
-              <p className="spotify-hint">
-                Pon tu mp3 en `public/soundtrack/our-song.mp3` y la portada en
-                `public/soundtrack/cover.jpg`
-              </p>
+            <header className="spotify-header">
+              <Image
+                src={spotifyLogoSrc}
+                alt="Spotify"
+                width={167}
+                height={50}
+                className="spotify-logo"
+              />
+            </header>
 
-              <div className="spotify-controls">
-                <button
-                  type="button"
-                  onClick={togglePlayback}
-                  className="spotify-play"
-                >
-                  {isPlaying ? "II" : ">"}
-                </button>
+            <div className="spotify-player">
+              <div className="spotify-art-column">
+                <div className="spotify-art">
+                  {hasSoundtrackCover && displayedSoundtrackCover ? (
+                    <Image
+                      src={displayedSoundtrackCover}
+                      alt="Portada de la cancion"
+                      width={640}
+                      height={640}
+                      className="spotify-art-image"
+                      onError={() => setHasSoundtrackCover(false)}
+                    />
+                  ) : (
+                    <div className="spotify-art-fallback" aria-hidden="true">
+                      <span>{displayedSoundtrackTitle.slice(0, 1)}</span>
+                    </div>
+                  )}
+                </div>
 
-                <div className="spotify-progress-shell">
+                <div className="spotify-volume" style={spotifyVolumeStyle}>
+                  <span
+                    className="spotify-volume-icon"
+                    aria-hidden="true"
+                  >
+                    {volume === 0 ? (
+                      <VolumeX size={18} strokeWidth={2.6} />
+                    ) : (
+                      <Volume2 size={18} strokeWidth={2.6} />
+                    )}
+                  </span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={volume}
+                    onChange={(event) => handleVolumeChange(event.target.value)}
+                    className="spotify-volume-slider"
+                    aria-label="Volumen de la cancion"
+                  />
+                  <span className="spotify-volume-value">
+                    {Math.round(volume * 100)}%
+                  </span>
+                </div>
+              </div>
+
+              <div className="spotify-meta">
+                <p className="spotify-kicker">Now playing</p>
+                <h3>{displayedSoundtrackTitle}</h3>
+                <p className="spotify-artist">{displayedSoundtrackArtist}</p>
+
+                {spotifyTrack?.spotifyUrl ? (
+                  <a
+                    className="spotify-track-link"
+                    href={spotifyTrack.spotifyUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Abrir en Spotify
+                  </a>
+                ) : null}
+
+                <div className="spotify-controls">
+                  <button
+                    type="button"
+                    className="spotify-icon-button"
+                    aria-label="Cancion anterior"
+                    disabled
+                  >
+                    <SkipBack aria-hidden="true" size={28} strokeWidth={2.8} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={togglePlayback}
+                    className="spotify-play"
+                    aria-label={isPlaying ? "Pausar cancion" : "Reproducir cancion"}
+                  >
+                    {isPlaying ? (
+                      <Pause
+                        aria-hidden="true"
+                        className="spotify-play-icon"
+                        size={30}
+                        strokeWidth={3}
+                      />
+                    ) : (
+                      <Play
+                        aria-hidden="true"
+                        className="spotify-play-icon spotify-play-icon--play"
+                        size={30}
+                        strokeWidth={3}
+                        fill="currentColor"
+                      />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="spotify-icon-button"
+                    aria-label="Cancion siguiente"
+                    disabled
+                  >
+                    <SkipForward aria-hidden="true" size={28} strokeWidth={2.8} />
+                  </button>
+                </div>
+
+                <div className="spotify-progress-shell" style={spotifyProgressStyle}>
                   <input
                     type="range"
                     min="0"
@@ -583,15 +881,63 @@ export default function Home() {
                     value={Math.min(trackProgress, trackDuration || 1)}
                     onChange={(event) => handleSeek(event.target.value)}
                     className="spotify-progress"
+                    aria-label="Progreso de la cancion"
                   />
 
                   <div className="spotify-times">
                     <span>{formatClock(trackProgress)}</span>
-                    <span>{formatClock(trackDuration)}</span>
+                    <span>{displayedTrackDurationLabel}</span>
                   </div>
                 </div>
+
               </div>
             </div>
+
+            <aside className="spotify-queue" aria-label="Cola de canciones">
+              <div className="spotify-queue-heading">
+                <p className="spotify-queue-title">
+                  {spotifyPlaylist?.name || "Playlist"}
+                </p>
+                {spotifyPlaylist ? (
+                  <span>{spotifyPlaylist.totalTracks} canciones</span>
+                ) : null}
+              </div>
+
+              <div className="spotify-queue-list">
+                {displayedPlaylistTracks.map((track, index) => (
+                  <div
+                    className={`spotify-queue-track ${
+                      index === 0 ? "spotify-queue-track--active" : ""
+                    }`}
+                    key={track.id || `${track.name}-${index}`}
+                  >
+                    <span className="spotify-queue-index">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <span className="spotify-queue-cover" aria-hidden="true">
+                      {track.cover ? (
+                        <Image
+                          src={track.cover.url}
+                          alt=""
+                          width={48}
+                          height={48}
+                        />
+                      ) : (
+                        <span />
+                      )}
+                    </span>
+                    <div>
+                      <strong>{track.name}</strong>
+                      <span>{track.artistName || "Spotify"}</span>
+                    </div>
+                    <span className="spotify-queue-duration">
+                      {track.durationText}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </aside>
+
           </article>
         </div>
       </section>
