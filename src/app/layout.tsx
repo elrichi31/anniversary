@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "felices 42 meses preciosa",
+  title: "Felices 42 meses preciosa 👩🏿‍⚕️",
   description:
-    "Una experiencia interactiva de aniversario hecha para celebrar desde el 18 de diciembre de 2022 hasta el 18 de junio de 2026.",
+    "Te amo princesa hermosa. Felices 42 meses, mi amor. Esta sorpresa es solo para ti.",
 };
 
 export const viewport: Viewport = {
