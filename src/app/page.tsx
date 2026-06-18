@@ -715,7 +715,7 @@ export default function Home() {
             }}
             disabled={!canEnter}
           >
-            {canEnter ? "Abrir sorpresa" : "Se abre el 18 de junio a las 6:00 PM"}
+            {canEnter ? "Abrir sorpresa" : "Se abre el 18 de junio a las 10:00 AM"}
           </button>
         </section>
       </main>
