@@ -15,6 +15,8 @@ type StorySceneProps = {
   items: MemoryItem[];
   letterParagraphs: string[];
   signature: string;
+  relationshipStartLabel: string;
+  recipientName: string;
   countdown: TogetherParts;
 };
 
@@ -28,6 +30,7 @@ type CountdownTileTexture = {
   context: CanvasRenderingContext2D;
   texture: THREE.CanvasTexture;
   label: string;
+  startLabel: string;
 };
 
 const SECTION_GAP = 10.9;
@@ -161,7 +164,11 @@ function scheduleTextureLoad(callback: () => void, delay: number) {
   return () => window.clearTimeout(timeoutId);
 }
 
-function createLetterTexture(paragraphs: string[], signature: string) {
+function createLetterTexture(
+  paragraphs: string[],
+  signature: string,
+  recipientName: string,
+) {
   const canvas = document.createElement("canvas");
   canvas.width = 1200;
   canvas.height = 1500;
@@ -188,7 +195,7 @@ function createLetterTexture(paragraphs: string[], signature: string) {
 
   context.fillStyle = "#39271b";
   context.font = "500 106px Georgia";
-  context.fillText("Princesa Hermosa :)", 110, 244);
+  context.fillText(`${recipientName} :)`, 110, 244);
 
   context.font = "400 40px Georgia";
   const maxWidth = canvas.width - 220;
@@ -248,14 +255,14 @@ function createEnvelopeTexture() {
   context.fillText("Toca para abrir", 100, 238);
   context.fillStyle = "rgba(74, 50, 36, 0.62)";
   context.font = "400 34px Georgia";
-  context.fillText("Hay una  guardada aqui dentro.", 100, 308);
+  context.fillText("Hay una sorpresa guardada aqui dentro.", 100, 308);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
 }
 
-function createCountdownHeaderTexture() {
+function createCountdownHeaderTexture(startLabel: string) {
   const canvas = document.createElement("canvas");
   canvas.width = 1024;
   canvas.height = 256;
@@ -281,14 +288,14 @@ function createCountdownHeaderTexture() {
   context.fillText("NUESTRO TIEMPO", 72, 86);
   context.fillStyle = "#fff8ef";
   context.font = "500 68px Georgia";
-  context.fillText("Desde 18 . 12 . 2022", 72, 168);
+  context.fillText(`Desde ${startLabel}`, 72, 168);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
 }
 
-function createCountdownTileTexture(label: string) {
+function createCountdownTileTexture(label: string, startLabel: string) {
   const canvas = document.createElement("canvas");
   canvas.width = 512;
   canvas.height = 512;
@@ -300,6 +307,7 @@ function createCountdownTileTexture(label: string) {
       context: document.createElement("canvas").getContext("2d")!,
       texture: new THREE.CanvasTexture(canvas),
       label,
+      startLabel,
     };
   }
 
@@ -311,11 +319,12 @@ function createCountdownTileTexture(label: string) {
     context,
     texture,
     label,
+    startLabel,
   };
 }
 
 function paintCountdownTile(tile: CountdownTileTexture, value: string) {
-  const { canvas, context, texture, label } = tile;
+  const { canvas, context, texture, label, startLabel } = tile;
   context.clearRect(0, 0, canvas.width, canvas.height);
 
   const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
@@ -341,7 +350,7 @@ function paintCountdownTile(tile: CountdownTileTexture, value: string) {
 
   context.fillStyle = "rgba(255, 248, 239, 0.58)";
   context.font = "500 22px Avenir Next, Arial";
-  context.fillText("juntos desde el 18 . 12 . 2022", 54, 422);
+  context.fillText(`juntos desde el ${startLabel}`, 54, 422);
 
   texture.needsUpdate = true;
 }
@@ -350,6 +359,8 @@ export default function StoryScene({
   items,
   letterParagraphs,
   signature,
+  relationshipStartLabel,
+  recipientName,
   countdown,
 }: StorySceneProps) {
   const mountRef = useRef<HTMLDivElement | null>(null);
@@ -570,7 +581,7 @@ export default function StoryScene({
     letterAura.position.z = -0.3;
     letterGroup.add(letterAura);
 
-    const letterTexture = createLetterTexture(letterParagraphs, signature);
+    const letterTexture = createLetterTexture(letterParagraphs, signature, recipientName);
     textures.push(letterTexture);
     const envelopeTexture = createEnvelopeTexture();
     textures.push(envelopeTexture);
@@ -700,7 +711,7 @@ export default function StoryScene({
     countdownGroup.position.set(0, COUNTDOWN_SECTION_Y, 0);
     scene.add(countdownGroup);
 
-    const countdownHeaderTexture = createCountdownHeaderTexture();
+    const countdownHeaderTexture = createCountdownHeaderTexture(relationshipStartLabel);
     textures.push(countdownHeaderTexture);
     const countdownHeader = new THREE.Mesh(
       new THREE.PlaneGeometry(5.6, 1.4),
@@ -735,7 +746,7 @@ export default function StoryScene({
       shell.position.copy(definition.position);
       countdownGroup.add(shell);
 
-      const tileTexture = createCountdownTileTexture(definition.label);
+      const tileTexture = createCountdownTileTexture(definition.label, relationshipStartLabel);
       textures.push(tileTexture.texture);
       const face = new THREE.Mesh(
         new THREE.PlaneGeometry(1.82, 1.82),
@@ -1103,7 +1114,7 @@ export default function StoryScene({
         mount.removeChild(renderer.domElement);
       }
     };
-  }, [items, letterParagraphs, signature]);
+  }, [items, letterParagraphs, signature, recipientName, relationshipStartLabel]);
 
   useEffect(() => {
     countdownUpdaterRef.current?.(countdown);

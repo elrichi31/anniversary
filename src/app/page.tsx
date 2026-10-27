@@ -6,9 +6,14 @@ import Image from "next/image";
 import { Pause, Play, SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
 import StoryScene from "@/components/StoryScene";
 import { memories } from "@/data/memories";
+import {
+  birthdayConfig,
+  formatUnlockLabel,
+  getUnlockDate,
+  letterParagraphs,
+} from "@/data/birthday";
 
-const milestoneDate = new Date(2026, 5, 18, 10, 0, 0);
-const relationshipStartDate = new Date("2022-12-18T00:00:00");
+const relationshipStartDate = birthdayConfig.relationshipStart;
 const soundtrackSrc = "/soundtrack/our-song.mp3";
 const soundtrackTitle = "Nuestra cancion";
 const soundtrackArtist = "Tu artista aqui";
@@ -87,10 +92,6 @@ type SpotifyPlaylistApiResponse =
       configured: true;
       error: string;
     };
-
-const letterDraft = [
-  "Holii preciosa, bueno esta carta es un poco diferente a las que generalmente te escribo pero bueno quiero que sepas eres el amor de mi vida y sabes que siempre te voy a amar con todo mi corazon, te pido perdon por todos los problemas que se pueden llegar a dar pero sabes que siempre voy a poner de parte para resolver cualquier cosa, gracias por tenerme tanta paciencia, yo se que aveces mi humor no es el mejor pero te agradezco que siempre estes ahi para mi, gracias por ser tan linda conmigo, por apoyarme en todo lo que hago, por entenderme y por ser la novia mas linda del mundo, me encanta cada cosa de ti y cada dia me enamoro mas de ti, gracias por hacerme tan feliz y por dejarme ser parte de tu vida, te amo mucho mi amor y espero que podamos seguir celebrando muchos meses mas juntos. Felices 42 meses mi amooor 👩🏿‍⚕️😽❤️",
-];
 
 const DEV_FORCE_UNLOCK = process.env.NEXT_PUBLIC_FORCE_UNLOCK === "true";
 
@@ -234,8 +235,8 @@ function getTogetherParts(now: Date | null) {
   };
 }
 
-function getMilestoneCountdownParts(now: Date | null) {
-  if (!now) {
+function getMilestoneCountdownParts(now: Date | null, milestoneDate: Date | null) {
+  if (!now || !milestoneDate) {
     return {
       days: "--",
       hours: "--",
@@ -258,8 +259,8 @@ function getMilestoneCountdownParts(now: Date | null) {
   };
 }
 
-function isMilestoneReached(now: Date | null) {
-  if (!now) {
+function isMilestoneReached(now: Date | null, milestoneDate: Date | null) {
+  if (!now || !milestoneDate) {
     return false;
   }
 
@@ -290,8 +291,9 @@ export default function Home() {
     useState<SpotifyPlaylistMetadata | null>(null);
 
   const together = getTogetherParts(now);
-  const milestoneCountdown = getMilestoneCountdownParts(now);
-  const milestoneReached = isMilestoneReached(now);
+  const milestoneDate = now ? getUnlockDate(now) : null;
+  const milestoneCountdown = getMilestoneCountdownParts(now, milestoneDate);
+  const milestoneReached = isMilestoneReached(now, milestoneDate);
   const canEnter = DEV_FORCE_UNLOCK || milestoneReached;
   const displayedSoundtrackArtist = spotifyTrack?.artistName || soundtrackArtist;
   const displayedSoundtrackCover = spotifyTrack?.cover?.url ?? null;
@@ -715,7 +717,11 @@ export default function Home() {
             }}
             disabled={!canEnter}
           >
-            {canEnter ? "Abrir sorpresa" : "Se abre el 18 de junio a las 10:00 AM"}
+            {canEnter
+              ? "Abrir sorpresa"
+              : milestoneDate
+                ? formatUnlockLabel(milestoneDate)
+                : "Cargando..."}
           </button>
         </section>
       </main>
@@ -729,9 +735,11 @@ export default function Home() {
       <div className="story-scene-layer" aria-hidden="true">
         <StoryScene
           items={memories}
-          letterParagraphs={letterDraft}
-          signature="Con amor, tu lokitoo 🦅"
+          letterParagraphs={letterParagraphs}
+          signature={birthdayConfig.signature}
           countdown={together}
+          relationshipStartLabel={birthdayConfig.relationshipStartLabel}
+          recipientName={birthdayConfig.name}
         />
       </div>
 
