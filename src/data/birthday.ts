@@ -2,19 +2,19 @@
 // Edita estos valores y el resto del proyecto se actualiza solo.
 
 export const birthdayConfig = {
-  // Nombre (o apodo) de la cumpleanera.
+  // Nombre (o apodo) de la cumpleañera.
   name: "Preciosa",
 
-  // Fecha de su cumpleanos (mes 1-12, dia) y cuantos cumple este ano.
+  // Fecha de su cumpleaños (mes 1-12, dia) y cuántos cumple este año.
   birthdayMonth: 12,
   birthdayDay: 18,
   turningAge: 25,
 
-  // Hora a la que se desbloquea la sorpresa el dia del cumpleanos.
+  // Hora a la que se desbloquea la sorpresa el día del cumpleaños.
   unlockHour: 0,
   unlockMinute: 0,
 
-  // Desde cuando estan juntos (alimenta el contador "Nuestro tiempo").
+  // Desde cuándo están juntos (alimenta el contador "Nuestro tiempo").
   relationshipStart: new Date("2022-12-18T00:00:00"),
   relationshipStartLabel: "18 . 12 . 2022",
 
@@ -24,8 +24,8 @@ export const birthdayConfig = {
     "Feliz cumpleaños, mi amor. Esta sorpresa es solo para ti.",
 };
 
-// Proxima fecha de desbloqueo: este ano si aun no pasa su cumpleanos,
-// o el dia mismo (queda desbloqueado todo ese dia).
+// Próxima fecha de desbloqueo: este ano si aun no pasa su cumpleaños,
+// o el día mismo (queda desbloqueado todo ese dia).
 export function getUnlockDate(now: Date = new Date()) {
   const { birthdayMonth, birthdayDay, unlockHour, unlockMinute } = birthdayConfig;
   const thisYear = new Date(
@@ -62,6 +62,6 @@ export function formatUnlockLabel(date: Date) {
 }
 
 export const letterParagraphs = [
-  `Feliz cumpleaños, ${birthdayConfig.name}. Hoy celebramos el dia en que el mundo se hizo un poquito mejor porque tu llegaste a el. Gracias por ser como eres: tu risa, tu paciencia y tu forma de cuidar a todos a tu alrededor me inspiran todos los dias.`,
-  `Este ano que empieza quiero verte lograr todo lo que te propongas y estar a tu lado para celebrarlo. Gracias por dejarme ser parte de tu vida, por cada momento juntos, y por hacerme tan feliz. Te amo muchisimo, mi amor. Que cumplas muchos, muchos mas 🎂❤️`,
+  `Feliz cumpleaños, ${birthdayConfig.name}. Hoy celebramos el día en que el mundo se hizo un poquito mejor porque tu llegaste a el. Gracias por ser como eres: tu risa, tu paciencia y tu forma de cuidar a todos a tu alrededor me inspiran todos los dias.`,
+  `Este año que empieza quiero verte lograr todo lo que te propongas y estar a tu lado para celebrarlo. Gracias por dejarme ser parte de tu vida, por cada momento juntos, y por hacerme tan feliz. Te amo muchísimo, mi amor. Que cumplas muchos, muchos mas 🎂❤️`,
 ];
