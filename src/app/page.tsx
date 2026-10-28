@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import BirthdayIntro from "@/components/BirthdayIntro";
 import BirthdayStory from "@/components/BirthdayStory";
 import Confetti from "@/components/Confetti";
+import Starfield from "@/components/Starfield";
 import { birthdayConfig, formatUnlockLabel, getUnlockDate } from "@/data/birthday";
 import { getCountdownParts, getTogetherParts } from "@/lib/time";
 
@@ -27,6 +28,7 @@ export default function Home() {
 
   return (
     <>
+      <Starfield />
       <Confetti />
       {entered ? (
         <BirthdayStory together={getTogetherParts(now, birthdayConfig.relationshipStart)} />

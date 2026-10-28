@@ -32,14 +32,18 @@ export default function BirthdayIntro({
       <section className="intro-hero">
         <p className="eyebrow">Para {name}</p>
         <h1 className="intro-title">
-          {canEnter ? "Ya es tu día" : "Falta poquito para tu día"}
-          <span aria-hidden="true"> 🎁</span>
+          <span className="shimmer-text">
+            {canEnter ? "Ya es tu día" : "Falta poquito para tu día"}
+          </span>
+          <span aria-hidden="true" className="bounce-emoji"> 🎁</span>
         </h1>
 
         <div className="intro-countdown" aria-live="polite">
           {tiles.map((tile) => (
             <article key={tile.key}>
-              <span>{countdown[tile.key]}</span>
+              <span key={countdown[tile.key]} className="tick">
+                {countdown[tile.key]}
+              </span>
               <p>{tile.label}</p>
             </article>
           ))}

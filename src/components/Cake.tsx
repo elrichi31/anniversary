@@ -1,7 +1,9 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 import { fireConfetti } from "@/lib/confetti";
+import { useInView } from "@/lib/useInView";
 
 type CakeProps = {
   age: number;
@@ -10,6 +12,7 @@ type CakeProps = {
 const candleXs = [112, 131, 150, 169, 188];
 
 export default function Cake({ age }: CakeProps) {
+  const [blockRef, inView] = useInView<HTMLDivElement>(0.35);
   const [blown, setBlown] = useState(false);
   const [listening, setListening] = useState(false);
   const [micError, setMicError] = useState(false);
@@ -89,9 +92,9 @@ export default function Cake({ age }: CakeProps) {
   useEffect(() => () => stopListeningRef.current?.(), []);
 
   return (
-    <div className="cake-block">
+    <div ref={blockRef} className="cake-block">
       <svg
-        className={`cake ${blown ? "cake--blown" : ""}`}
+        className={`cake ${inView ? "cake--in" : ""} ${blown ? "cake--blown" : ""}`}
         viewBox="0 0 300 270"
         role="img"
         aria-label={blown ? "Pastel con las velitas apagadas" : "Pastel con velitas encendidas"}
@@ -115,25 +118,36 @@ export default function Cake({ age }: CakeProps) {
           </radialGradient>
         </defs>
 
-        <ellipse cx="150" cy="248" rx="132" ry="14" fill="rgba(0,0,0,0.35)" />
-        <ellipse cx="150" cy="240" rx="128" ry="13" fill="#fff8ef" />
+        <g className="cake-plate">
+          <ellipse cx="150" cy="248" rx="132" ry="14" fill="rgba(0,0,0,0.35)" />
+          <ellipse cx="150" cy="240" rx="128" ry="13" fill="#fff8ef" />
+        </g>
 
-        <rect x="34" y="168" width="232" height="72" rx="14" fill="url(#cake-bottom)" />
+        <g className="cake-tier cake-tier--1">
+<rect x="34" y="168" width="232" height="72" rx="14" fill="url(#cake-bottom)" />
         <path
           d="M34 182 q0 -14 14 -14 h204 q14 0 14 14 q-12 20 -26 6 q-12 22 -28 4 q-14 24 -30 2 q-16 22 -32 2 q-16 20 -32 2 q-16 20 -32 0 q-14 18 -30 -2 q-14 14 -22 -4 z"
           fill="#fff8ef"
         />
-        <rect x="66" y="118" width="168" height="56" rx="12" fill="url(#cake-middle)" />
+        </g>
+
+        <g className="cake-tier cake-tier--2">
+<rect x="66" y="118" width="168" height="56" rx="12" fill="url(#cake-middle)" />
         <path
           d="M66 130 q0 -12 12 -12 h144 q12 0 12 12 q-10 18 -22 4 q-12 18 -26 2 q-14 20 -28 2 q-14 18 -28 0 q-12 16 -24 -2 q-12 10 -20 -6 z"
           fill="#fff8ef"
         />
-        <rect x="98" y="76" width="104" height="48" rx="12" fill="url(#cake-top)" />
+        </g>
+
+        <g className="cake-tier cake-tier--3">
+<rect x="98" y="76" width="104" height="48" rx="12" fill="url(#cake-top)" />
         <path
           d="M98 88 q0 -12 12 -12 h80 q12 0 12 12 q-8 14 -18 3 q-10 14 -22 2 q-12 14 -22 0 q-10 12 -22 -2 q-8 8 -20 -3 z"
           fill="#fff8ef"
         />
+        </g>
 
+        <g className="cake-sprinkles">
         {[
           [58, 205, "#fff8ef", -20],
           [92, 214, "#f6c86f", 25],
@@ -156,9 +170,10 @@ export default function Cake({ age }: CakeProps) {
             transform={`rotate(${angle} ${Number(x) + 6} ${Number(y) + 2})`}
           />
         ))}
+        </g>
 
         {candleXs.map((x, index) => (
-          <g key={x}>
+          <g key={x} className="cake-candle" style={{ "--i": index } as CSSProperties}>
             <rect
               x={x - 4}
               y="44"
@@ -174,7 +189,10 @@ export default function Cake({ age }: CakeProps) {
               strokeLinecap="round"
             />
             <rect x={x - 0.8} y="38" width="1.6" height="7" rx="0.8" fill="#4a3224" />
-            <g className="cake-flame" style={{ animationDelay: `${index * -0.37}s` }}>
+            <g
+              className="cake-flame"
+              style={{ "--i": index, "--flick": `${index * -0.37}s` } as CSSProperties}
+            >
               <circle cx={x} cy="30" r="16" fill="url(#flame-glow)" />
               <path
                 d={`M${x} 14 C${x + 8} 24 ${x + 6} 36 ${x} 37 C${x - 6} 36 ${x - 8} 24 ${x} 14 Z`}

@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
+import type { CSSProperties } from "react";
+import { useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
 import Balloons from "@/components/Balloons";
 import Cake from "@/components/Cake";
+import CountUp from "@/components/CountUp";
 import PhotoPile from "@/components/PhotoPile";
 import Reveal from "@/components/Reveal";
 import SoundtrackSection from "@/components/SoundtrackSection";
+import WordReveal from "@/components/WordReveal";
 import { birthdayConfig, letterParagraphs } from "@/data/birthday";
 import { memories } from "@/data/memories";
 import { fireConfetti } from "@/lib/confetti";
@@ -24,6 +27,31 @@ const togetherTiles: { key: keyof TogetherParts; label: string }[] = [
 ];
 
 export default function BirthdayStory({ together }: BirthdayStoryProps) {
+  const heroRef = useRef<HTMLElement | null>(null);
+
+  // Parallax del inicio: el texto sube y se desvanece al empezar a bajar.
+  useEffect(() => {
+    let frame = 0;
+
+    const update = () => {
+      frame = 0;
+      const progress = Math.min(Math.max(window.scrollY / window.innerHeight, 0), 1);
+      heroRef.current?.style.setProperty("--hero-p", progress.toFixed(3));
+    };
+
+    const onScroll = () => {
+      if (!frame) {
+        frame = window.requestAnimationFrame(update);
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
   useEffect(() => {
     window.scrollTo(0, 0);
     const timers = [
@@ -36,15 +64,18 @@ export default function BirthdayStory({ together }: BirthdayStoryProps) {
   }, []);
 
   return (
-    <main className="story">
-      <section className="hero">
+    <main className="story story--enter">
+      <section ref={heroRef} className="hero">
         <Balloons count={10} />
         <div className="hero-copy">
           <p className="eyebrow">Para {birthdayConfig.name}</p>
-          <h1 className="hero-title">
-            Feliz
-            <br />
-            cumpleaños
+          <h1 className="hero-title" aria-label="Feliz cumpleaños">
+            <span className="hero-line" aria-hidden="true">
+              <span style={{ "--d": "0.25s" } as CSSProperties}>Feliz</span>
+            </span>
+            <span className="hero-line" aria-hidden="true">
+              <span style={{ "--d": "0.5s" } as CSSProperties}>cumpleaños</span>
+            </span>
           </h1>
           <p className="hero-age">
             Hoy cumples <strong>{birthdayConfig.turningAge}</strong> 🎈
@@ -57,35 +88,27 @@ export default function BirthdayStory({ together }: BirthdayStoryProps) {
       </section>
 
       <section className="lines">
-        <Reveal>
-          <p className="line">Hoy es tu día.</p>
-        </Reveal>
-        <Reveal delay={150}>
-          <p className="line">Y quise hacerte algo especial.</p>
-        </Reveal>
-        <Reveal delay={300}>
-          <p className="line line--accent">Ve bajando… 💌</p>
-        </Reveal>
+        <WordReveal className="line" text="Hoy es tu día." />
+        <WordReveal className="line" text="Y quise hacerte algo especial." delay={500} />
+        <WordReveal className="line line--accent" text="Ve bajando… 💌" delay={1300} />
       </section>
 
       <PhotoPile items={memories} />
 
       <section className="cake-section">
-        <Reveal>
+        <Reveal variant="blur">
           <h2 className="section-title">Hora del pastel</h2>
         </Reveal>
-        <Reveal delay={120}>
-          <Cake age={birthdayConfig.turningAge} />
-        </Reveal>
+        <Cake age={birthdayConfig.turningAge} />
       </section>
 
       <section className="letter-section">
-        <Reveal>
+        <Reveal variant="unfold" className="letter-wrap">
           <article className="letter">
             <p className="eyebrow eyebrow--dark">Una carta para ti</p>
             <h2 className="letter-title">{birthdayConfig.name} :)</h2>
             {letterParagraphs.map((paragraph, index) => (
-              <Reveal key={paragraph} delay={index * 140}>
+              <Reveal key={paragraph} delay={500 + index * 350} variant="blur">
                 <p className="letter-text">{paragraph}</p>
               </Reveal>
             ))}
@@ -98,14 +121,17 @@ export default function BirthdayStory({ together }: BirthdayStoryProps) {
         <Reveal>
           <p className="eyebrow">Nuestro tiempo</p>
           <h2 className="section-title">
-            Juntos desde el {birthdayConfig.relationshipStartLabel}
+            Juntos desde el{" "}
+            <span className="nowrap">{birthdayConfig.relationshipStartLabel}</span>
           </h2>
         </Reveal>
         <div className="together-grid">
           {togetherTiles.map((tile, index) => (
-            <Reveal key={tile.key} delay={index * 110}>
+            <Reveal key={tile.key} delay={index * 130} variant="zoom">
               <article className="together-tile">
-                <span>{together[tile.key]}</span>
+                <span>
+                  <CountUp value={together[tile.key]} />
+                </span>
                 <p>{tile.label}</p>
               </article>
             </Reveal>
@@ -116,7 +142,12 @@ export default function BirthdayStory({ together }: BirthdayStoryProps) {
       <SoundtrackSection autoplay />
 
       <footer className="story-footer">
-        <p>Feliz cumpleaños, {birthdayConfig.name} 💖</p>
+        <p>
+          Feliz cumpleaños, {birthdayConfig.name}{" "}
+          <span className="heartbeat" aria-hidden="true">
+            💖
+          </span>
+        </p>
         <button
           type="button"
           className="ghost-button"

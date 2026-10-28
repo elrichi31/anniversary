@@ -13,13 +13,20 @@ type BalloonsProps = {
 const palette = ["#ff5d8f", "#f6c86f", "#79dfca", "#a3b7ff", "#ff8f5b", "#c89bff"];
 
 // Valores fijos por indice para que servidor y cliente pinten lo mismo.
+// Los globos cercanos suben por los costados para no tapar el texto del centro;
+// los lejanos (mas chicos y difuminados) pueden cruzar por detras.
 function balloonAt(index: number) {
+  const far = index % 3 === 2;
+  const side = index % 2 === 0 ? 0 : 1;
+  const lane = ((index * 37) % 15) + 1;
+
   return {
     id: index,
+    far,
     color: palette[index % palette.length],
-    left: (index * 37 + 8) % 92,
-    size: 3.4 + ((index * 13) % 5) * 0.55,
-    duration: 15 + ((index * 7) % 9),
+    left: far ? (index * 29 + 12) % 86 : side === 0 ? lane : 100 - lane - 12,
+    size: far ? 2.4 + ((index * 5) % 3) * 0.3 : 3.6 + ((index * 13) % 4) * 0.5,
+    duration: far ? 24 + ((index * 7) % 8) : 14 + ((index * 7) % 8),
     delay: -((index * 53) % 21),
     sway: 14 + ((index * 11) % 22),
   };
@@ -51,7 +58,7 @@ export default function Balloons({ count = 9, interactive = true }: BalloonsProp
           <button
             key={balloon.id}
             type="button"
-            className="balloon"
+            className={`balloon ${balloon.far ? "balloon--far" : ""}`}
             tabIndex={interactive ? 0 : -1}
             disabled={!interactive}
             aria-label="Reventar globo"
