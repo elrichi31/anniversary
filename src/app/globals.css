@@ -276,8 +276,7 @@ body {
   width: min(100%, 36rem);
 }
 
-.intro-countdown article,
-.together-tile {
+.intro-countdown article {
   display: grid;
   align-content: center;
   justify-items: center;
@@ -291,16 +290,14 @@ body {
   text-align: center;
 }
 
-.intro-countdown span,
-.together-tile span {
+.intro-countdown span {
   font-family: var(--font-display);
   font-size: clamp(2.2rem, 9vw, 3.5rem);
   line-height: 0.95;
   font-variant-numeric: tabular-nums;
 }
 
-.intro-countdown p,
-.together-tile p {
+.intro-countdown p {
   margin: 0.45rem 0 0;
   color: rgba(255, 248, 239, 0.62);
   font-size: 0.7rem;
@@ -660,29 +657,6 @@ body {
   font-size: 1.5rem;
   font-style: italic;
   text-align: right;
-}
-
-/* ---------- Nuestro tiempo ---------- */
-
-.together-section {
-  display: grid;
-  justify-items: center;
-  gap: 1.6rem;
-  padding: 5rem 1rem;
-  text-align: center;
-}
-
-.together-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.8rem;
-  width: min(100%, 36rem);
-}
-
-@media (min-width: 640px) {
-  .together-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
 }
 
 .story-footer {
@@ -1183,18 +1157,6 @@ body {
 
 .letter-signature {
   animation: none;
-}
-
-/* Tarjetas de tiempo juntos */
-.together-tile {
-  transition:
-    transform 260ms ease,
-    border-color 260ms ease;
-}
-
-.together-tile:hover {
-  border-color: rgba(255, 143, 180, 0.5);
-  transform: translateY(-5px);
 }
 
 .heartbeat {

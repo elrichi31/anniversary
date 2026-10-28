@@ -14,10 +14,6 @@ export const birthdayConfig = {
   unlockHour: 0,
   unlockMinute: 0,
 
-  // Desde cuándo están juntos (alimenta el contador "Nuestro tiempo").
-  relationshipStart: new Date("2022-12-18T00:00:00"),
-  relationshipStartLabel: "18 . 12 . 2022",
-
   signature: "Con amor, tu lokitoo 🦅",
   pageTitle: "Feliz cumpleaños preciosa 🎂",
   pageDescription:

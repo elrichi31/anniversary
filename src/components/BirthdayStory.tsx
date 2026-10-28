@@ -5,7 +5,6 @@ import { useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
 import Balloons from "@/components/Balloons";
 import Cake from "@/components/Cake";
-import CountUp from "@/components/CountUp";
 import PhotoPile from "@/components/PhotoPile";
 import Reveal from "@/components/Reveal";
 import SoundtrackSection from "@/components/SoundtrackSection";
@@ -13,20 +12,8 @@ import WordReveal from "@/components/WordReveal";
 import { birthdayConfig, letterParagraphs } from "@/data/birthday";
 import { memories } from "@/data/memories";
 import { fireConfetti } from "@/lib/confetti";
-import type { TogetherParts } from "@/lib/time";
 
-type BirthdayStoryProps = {
-  together: TogetherParts;
-};
-
-const togetherTiles: { key: keyof TogetherParts; label: string }[] = [
-  { key: "years", label: "Años" },
-  { key: "months", label: "Meses" },
-  { key: "days", label: "Días" },
-  { key: "hours", label: "Horas" },
-];
-
-export default function BirthdayStory({ together }: BirthdayStoryProps) {
+export default function BirthdayStory() {
   const heroRef = useRef<HTMLElement | null>(null);
 
   // Parallax del inicio: el texto sube y se desvanece al empezar a bajar.
@@ -115,28 +102,6 @@ export default function BirthdayStory({ together }: BirthdayStoryProps) {
             <p className="letter-signature">{birthdayConfig.signature}</p>
           </article>
         </Reveal>
-      </section>
-
-      <section className="together-section">
-        <Reveal>
-          <p className="eyebrow">Nuestro tiempo</p>
-          <h2 className="section-title">
-            Juntos desde el{" "}
-            <span className="nowrap">{birthdayConfig.relationshipStartLabel}</span>
-          </h2>
-        </Reveal>
-        <div className="together-grid">
-          {togetherTiles.map((tile, index) => (
-            <Reveal key={tile.key} delay={index * 130} variant="zoom">
-              <article className="together-tile">
-                <span>
-                  <CountUp value={together[tile.key]} />
-                </span>
-                <p>{tile.label}</p>
-              </article>
-            </Reveal>
-          ))}
-        </div>
       </section>
 
       <SoundtrackSection autoplay />
