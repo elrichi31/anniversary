@@ -237,6 +237,7 @@ export default function PhotoPile({ items }: PhotoPileProps) {
                       sizes="(max-width: 600px) 76vw, 400px"
                       loading="eager"
                       className="pile-photo-image"
+                      style={{ objectPosition: `50% ${item.focusY}%` }}
                     />
                   ) : null}
                 </div>
