@@ -54,7 +54,6 @@ export default function BirthdayStory() {
       <section ref={heroRef} className="hero">
         <Balloons count={10} />
         <div className="hero-copy">
-          <p className="eyebrow">Para {birthdayConfig.name}</p>
           <h1 className="hero-title" aria-label="Feliz cumpleaños">
             <span className="hero-line" aria-hidden="true">
               <span style={{ "--d": "0.25s" } as CSSProperties}>Feliz</span>

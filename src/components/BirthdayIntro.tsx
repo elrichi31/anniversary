@@ -30,7 +30,6 @@ export default function BirthdayIntro({
       <Balloons count={7} interactive={canEnter} />
 
       <section className="intro-hero">
-        <p className="eyebrow">Para {name}</p>
         <h1 className="intro-title">
           <span className="shimmer-text">
             {canEnter ? "Ya es tu día" : "Falta poquito para tu día"}
