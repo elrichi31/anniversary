@@ -472,42 +472,6 @@ body {
   object-position: 50% 30%;
 }
 
-.pile-footer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 300;
-  display: flex;
-  justify-content: center;
-  gap: 0.6rem;
-  padding: 1.6rem 1rem calc(1.1rem + env(safe-area-inset-bottom));
-  background: linear-gradient(0deg, rgba(10, 6, 15, 0.92) 50%, rgba(10, 6, 15, 0));
-  transition: opacity 300ms ease;
-  pointer-events: none;
-}
-
-.pile-footer--hidden {
-  opacity: 0;
-}
-
-.pile-chip,
-.pile-count {
-  padding: 0.4rem 0.9rem;
-  border: 1px solid rgba(255, 248, 239, 0.16);
-  border-radius: 999px;
-  background: rgba(10, 6, 15, 0.72);
-  backdrop-filter: blur(10px);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.pile-count {
-  color: var(--gold);
-  font-variant-numeric: tabular-nums;
-}
-
 /* ---------- Pastel ---------- */
 
 .cake-section {
@@ -941,20 +905,6 @@ body {
   transform: translateX(-50%) rotate(-4deg);
 }
 
-.pile-count--pop {
-  animation: count-pop 420ms cubic-bezier(0.2, 0.9, 0.3, 1.5);
-}
-
-@keyframes count-pop {
-  from {
-    transform: scale(0.7);
-    background: rgba(255, 93, 143, 0.6);
-  }
-  to {
-    transform: scale(1);
-  }
-}
-
 /* Pastel: los pisos caen uno por uno y las velitas se encienden */
 .cake-block {
   position: relative;
@@ -1159,8 +1109,7 @@ body {
   .cake-wish,
   .heartbeat,
   .hero-copy .eyebrow,
-  .hero-age,
-  .pile-count--pop {
+  .hero-age {
     animation: none !important;
   }
 

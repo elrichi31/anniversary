@@ -86,7 +86,6 @@ export default function PhotoPile({ items }: PhotoPileProps) {
   const photoRefs = useRef<(HTMLDivElement | null)[]>([]);
   const finishedRef = useRef(false);
   const [layout, setLayout] = useState<Layout | null>(null);
-  const [active, setActive] = useState(0);
   const [finished, setFinished] = useState(false);
 
   const total = items.length;
@@ -126,11 +125,6 @@ export default function PhotoPile({ items }: PhotoPileProps) {
       const scrollable = rect.height - stage.clientHeight;
       const progress = scrollable > 0 ? clamp(-rect.top / scrollable) : 0;
       const u = progress * totalUnits - ENTER_SPAN;
-
-      setActive((current) => {
-        const next = clamp(Math.round(u), 0, total - 1);
-        return next === current ? current : next;
-      });
 
       const done = progress > 0.97;
       if (done !== finishedRef.current) {
@@ -191,8 +185,6 @@ export default function PhotoPile({ items }: PhotoPileProps) {
     };
   }, [layout, total, totalUnits]);
 
-  const current = items[active];
-
   return (
     <section
       ref={sectionRef}
@@ -244,13 +236,6 @@ export default function PhotoPile({ items }: PhotoPileProps) {
               );
             })
           : null}
-
-        <footer className={`pile-footer ${layout && !finished ? "" : "pile-footer--hidden"}`}>
-          <span className="pile-chip">{current?.date}</span>
-          <span key={active} className="pile-count pile-count--pop">
-            {active + 1} / {total}
-          </span>
-        </footer>
       </div>
     </section>
   );
