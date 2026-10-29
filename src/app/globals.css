@@ -944,25 +944,7 @@ body {
   }
 }
 
-/* Fotos: barra de avance, cinta y pop del contador */
-.pile-progress {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 310;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.pile-progress span {
-  display: block;
-  height: 100%;
-  background: linear-gradient(90deg, var(--pink), var(--gold), var(--mint));
-  transform: scaleX(0);
-  transform-origin: 0 50%;
-}
-
+/* Fotos: cinta y pop del contador */
 .pile-photo::before {
   content: "";
   position: absolute;

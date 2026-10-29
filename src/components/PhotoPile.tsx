@@ -84,7 +84,6 @@ export default function PhotoPile({ items }: PhotoPileProps) {
   const sectionRef = useRef<HTMLElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const photoRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const progressRef = useRef<HTMLSpanElement | null>(null);
   const finishedRef = useRef(false);
   const [layout, setLayout] = useState<Layout | null>(null);
   const [active, setActive] = useState(0);
@@ -127,10 +126,6 @@ export default function PhotoPile({ items }: PhotoPileProps) {
       const scrollable = rect.height - stage.clientHeight;
       const progress = scrollable > 0 ? clamp(-rect.top / scrollable) : 0;
       const u = progress * totalUnits - ENTER_SPAN;
-
-      if (progressRef.current) {
-        progressRef.current.style.transform = `scaleX(${progress})`;
-      }
 
       setActive((current) => {
         const next = clamp(Math.round(u), 0, total - 1);
@@ -206,10 +201,6 @@ export default function PhotoPile({ items }: PhotoPileProps) {
       aria-label="Nuestros recuerdos"
     >
       <div ref={stageRef} className="pile-stage">
-        <span className="pile-progress" aria-hidden="true">
-          <span ref={progressRef} />
-        </span>
-
         <header className="pile-header">
           <p className="pile-kicker">Nuestros recuerdos</p>
           <h2 className={finished ? "pile-title pile-title--done" : "pile-title"}>
