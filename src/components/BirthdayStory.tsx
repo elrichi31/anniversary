@@ -7,7 +7,6 @@ import Balloons from "@/components/Balloons";
 import Cake from "@/components/Cake";
 import PhotoPile from "@/components/PhotoPile";
 import Reveal from "@/components/Reveal";
-import SoundtrackSection from "@/components/SoundtrackSection";
 import WordReveal from "@/components/WordReveal";
 import { birthdayConfig, letterParagraphs } from "@/data/birthday";
 import { memories } from "@/data/memories";
@@ -103,8 +102,6 @@ export default function BirthdayStory() {
           </article>
         </Reveal>
       </section>
-
-      <SoundtrackSection autoplay />
 
       <footer className="story-footer">
         <p>
