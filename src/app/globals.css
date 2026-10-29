@@ -609,12 +609,6 @@ body {
   font-size: 1.6rem;
 }
 
-.cake-error {
-  margin: 0;
-  color: var(--orange);
-  font-size: 0.82rem;
-}
-
 /* ---------- Carta ---------- */
 
 .letter-section {

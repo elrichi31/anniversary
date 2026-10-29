@@ -82,9 +82,6 @@ export default function BirthdayStory() {
       <PhotoPile items={memories} />
 
       <section className="cake-section">
-        <Reveal variant="blur">
-          <h2 className="section-title">Hora del pastel</h2>
-        </Reveal>
         <Cake age={birthdayConfig.turningAge} />
       </section>
 

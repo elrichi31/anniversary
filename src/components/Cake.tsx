@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { fireConfetti } from "@/lib/confetti";
 import { useInView } from "@/lib/useInView";
 
@@ -14,9 +14,6 @@ const candleXs = [112, 131, 150, 169, 188];
 export default function Cake({ age }: CakeProps) {
   const [blockRef, inView] = useInView<HTMLDivElement>(0.35);
   const [blown, setBlown] = useState(false);
-  const [listening, setListening] = useState(false);
-  const [micError, setMicError] = useState(false);
-  const stopListeningRef = useRef<(() => void) | null>(null);
   const blownRef = useRef(false);
 
   const setBlownState = (value: boolean) => {
@@ -34,62 +31,6 @@ export default function Cake({ age }: CakeProps) {
     fireConfetti({ x: 0.1, y: 0.8, count: 60, spread: 50, power: 1.1 });
     fireConfetti({ x: 0.9, y: 0.8, count: 60, spread: 50, power: 1.1 });
   };
-
-  const stopListening = () => {
-    stopListeningRef.current?.();
-    stopListeningRef.current = null;
-    setListening(false);
-  };
-
-  // Detecta un soplido con el microfono: un golpe sostenido de volumen.
-  const listenForBlow = async () => {
-    setMicError(false);
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const audioContext = new AudioContext();
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 512;
-      audioContext.createMediaStreamSource(stream).connect(analyser);
-      const data = new Uint8Array(analyser.fftSize);
-      let loudFrames = 0;
-      let raf = 0;
-
-      const cleanup = () => {
-        window.cancelAnimationFrame(raf);
-        stream.getTracks().forEach((track) => track.stop());
-        void audioContext.close();
-      };
-
-      const check = () => {
-        analyser.getByteTimeDomainData(data);
-        let sum = 0;
-        for (const value of data) {
-          const centered = (value - 128) / 128;
-          sum += centered * centered;
-        }
-        loudFrames = Math.sqrt(sum / data.length) > 0.12 ? loudFrames + 1 : 0;
-
-        if (loudFrames > 12) {
-          cleanup();
-          stopListeningRef.current = null;
-          setListening(false);
-          blowOut();
-          return;
-        }
-
-        raf = window.requestAnimationFrame(check);
-      };
-
-      stopListeningRef.current = cleanup;
-      setListening(true);
-      check();
-    } catch {
-      setMicError(true);
-    }
-  };
-
-  useEffect(() => () => stopListeningRef.current?.(), []);
 
   return (
     <div ref={blockRef} className="cake-block">
@@ -232,16 +173,6 @@ export default function Cake({ age }: CakeProps) {
             <button type="button" className="primary-button" onClick={blowOut}>
               Soplar velitas 🎂
             </button>
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={listening ? stopListening : listenForBlow}
-            >
-              {listening ? "Escuchando… sopla fuerte 🎤" : "O sopla de verdad (micrófono)"}
-            </button>
-            {micError ? (
-              <p className="cake-error">No pude usar el micrófono, usa el botón.</p>
-            ) : null}
           </>
         )}
       </div>
