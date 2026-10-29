@@ -1,5 +1,8 @@
 export type MemoryItem = {
   caption: string;
+  // Posicion vertical del recorte (0 = arriba, 100 = abajo) para dejar su cara a la vista.
+  focusY: number;
+  landscape: boolean;
   date: string;
   src?: string;
   tone: string;
@@ -53,9 +56,24 @@ const photoSources = [
   "/photos/optimized/photo-28.jpg",
 ];
 
-export const memories: MemoryItem[] = photoSources.map((src, index) => ({
+// Fotos horizontales (el resto son verticales), para mostrarlas sin recortar de mas.
+const landscapeIndexes = new Set([12, 13, 18, 19, 22, 24]);
+
+// Fotos que no se muestran en la historia (de lado, sin caras, etc.). Numero de foto, empezando en 1.
+const skippedPhotos = new Set([1, 4, 6, 8, 11, 15, 21, 24, 27, 28]);
+
+// Donde esta su cara en cada foto vertical (por defecto 30%). Numero de foto, empezando en 1.
+const focusYByPhoto: Record<number, number> = { 7: 80, 12: 15, 14: 45, 20: 0, 26: 85 };
+
+const allMemories: MemoryItem[] = photoSources.map((src, index) => ({
   caption: `Recuerdo ${index + 1}`,
+  landscape: landscapeIndexes.has(index),
+  focusY: focusYByPhoto[index + 1] ?? 30,
   date: index < 6 ? "2022" : index < 14 ? "2023" : index < 22 ? "2024" : "2025",
   src,
   tone: tones[index % tones.length],
 }));
+
+export const memories: MemoryItem[] = allMemories.filter(
+  (_, index) => !skippedPhotos.has(index + 1),
+);

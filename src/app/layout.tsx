@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { birthdayConfig } from "@/data/birthday";
 
 export const metadata: Metadata = {
-  title: "Felices 42 meses preciosa 👩🏿‍⚕️",
-  description:
-    "Te amo princesa hermosa. Felices 42 meses, mi amor. Esta sorpresa es solo para ti.",
+  title: birthdayConfig.pageTitle,
+  description: birthdayConfig.pageDescription,
 };
 
 export const viewport: Viewport = {
