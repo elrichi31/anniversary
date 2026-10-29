@@ -88,7 +88,6 @@ export default function BirthdayStory() {
         <Reveal variant="unfold" className="letter-wrap">
           <article className="letter">
             <p className="eyebrow eyebrow--dark">Una carta para ti</p>
-            <h2 className="letter-title">{birthdayConfig.name} :)</h2>
             {letterParagraphs.map((paragraph, index) => (
               <Reveal key={paragraph} delay={500 + index * 350} variant="blur">
                 <p className="letter-text">{paragraph}</p>
@@ -100,12 +99,6 @@ export default function BirthdayStory() {
       </section>
 
       <footer className="story-footer">
-        <p>
-          Feliz cumpleaños, {birthdayConfig.name}{" "}
-          <span className="heartbeat" aria-hidden="true">
-            💖
-          </span>
-        </p>
         <button
           type="button"
           className="ghost-button"

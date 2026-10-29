@@ -8,7 +8,7 @@ export const birthdayConfig = {
   // Fecha de su cumpleaños (mes 1-12, dia) y cuántos cumple este año.
   birthdayMonth: 10,
   birthdayDay: 29,
-  turningAge: 25,
+  turningAge: 24,
 
   // Hora a la que se desbloquea la sorpresa el día del cumpleaños.
   unlockHour: 0,

@@ -629,13 +629,6 @@ body {
   transform: rotate(-1deg);
 }
 
-.letter-title {
-  margin: 0.3rem 0 1.2rem;
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 8vw, 3.2rem);
-  font-weight: 500;
-}
-
 .letter-text {
   margin: 0 0 1.1rem;
   font-family: var(--font-display);
@@ -660,10 +653,6 @@ body {
   font-family: var(--font-display);
   font-size: 1.4rem;
   text-align: center;
-}
-
-.story-footer p {
-  margin: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
