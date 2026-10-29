@@ -4,7 +4,6 @@ import Balloons from "@/components/Balloons";
 import type { CountdownParts } from "@/lib/time";
 
 type BirthdayIntroProps = {
-  name: string;
   countdown: CountdownParts;
   canEnter: boolean;
   lockedLabel: string;
@@ -19,7 +18,6 @@ const tiles: { key: keyof CountdownParts; label: string }[] = [
 ];
 
 export default function BirthdayIntro({
-  name,
   countdown,
   canEnter,
   lockedLabel,

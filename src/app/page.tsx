@@ -5,7 +5,7 @@ import BirthdayIntro from "@/components/BirthdayIntro";
 import BirthdayStory from "@/components/BirthdayStory";
 import Confetti from "@/components/Confetti";
 import Starfield from "@/components/Starfield";
-import { birthdayConfig, formatUnlockLabel, getUnlockDate } from "@/data/birthday";
+import { formatUnlockLabel, getUnlockDate } from "@/data/birthday";
 import { getCountdownParts } from "@/lib/time";
 
 const DEV_FORCE_UNLOCK = process.env.NEXT_PUBLIC_FORCE_UNLOCK === "true";
@@ -34,7 +34,6 @@ export default function Home() {
         <BirthdayStory />
       ) : (
         <BirthdayIntro
-          name={birthdayConfig.name}
           countdown={getCountdownParts(now, unlockDate)}
           canEnter={canEnter}
           lockedLabel={unlockDate ? formatUnlockLabel(unlockDate) : "Cargando..."}
