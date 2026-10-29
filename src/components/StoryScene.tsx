@@ -33,7 +33,6 @@ type CountdownTileTexture = {
 const SECTION_GAP = 10.9;
 const LETTER_SECTION_Y = -12.7;
 const COUNTDOWN_SECTION_Y = -SECTION_GAP * 2;
-const SOUNDTRACK_SECTION_Y = -SECTION_GAP * 3;
 const PHOTO_PLANE_WIDTH = 1.28;
 const PHOTO_PLANE_HEIGHT = 1.72;
 
@@ -438,9 +437,7 @@ export default function StoryScene({
     roseLight.position.set(5, LETTER_SECTION_Y, 4);
     const coolLight = new THREE.PointLight("#8cb7ff", 4.2, 34, 2);
     coolLight.position.set(-4.5, COUNTDOWN_SECTION_Y, 5);
-    const soundtrackLight = new THREE.PointLight("#1ed760", 3.8, 34, 2);
-    soundtrackLight.position.set(4.5, SOUNDTRACK_SECTION_Y, 5);
-    scene.add(ambient, warmLight, roseLight, coolLight, soundtrackLight);
+    scene.add(ambient, warmLight, roseLight, coolLight);
 
     const starGeometry = new THREE.BufferGeometry();
     const starCount = 820;
