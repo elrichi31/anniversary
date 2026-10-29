@@ -58,6 +58,7 @@ export function formatUnlockLabel(date: Date) {
 }
 
 export const letterParagraphs = [
-  `Feliz cumpleaños, ${birthdayConfig.name}. Hoy celebramos el día en que el mundo se hizo un poquito mejor porque tu llegaste a el. Gracias por ser como eres: tu risa, tu paciencia y tu forma de cuidar a todos a tu alrededor me inspiran todos los dias.`,
-  `Este año que empieza quiero verte lograr todo lo que te propongas y estar a tu lado para celebrarlo. Gracias por dejarme ser parte de tu vida, por cada momento juntos, y por hacerme tan feliz. Te amo muchísimo, mi amor. Que cumplas muchos, muchos mas 🎂❤️`,
+  "Feliz cumpleaños, princesa hermosa. No sabes lo feliz que soy a tu lado, me haces demasiado feliz. Sabes que puedes contar conmigo para lo que sea y que siempre te apoyaré en todo lo que hagas.",
+  "Sé que en este año lograrás todo aquello que te propongas, y sabes que voy a estar a tu lado para celebrarlo. Muchas gracias por dejarme ser parte de tu vida y por todos los momentos lindos que hemos tenido.",
+  "Te amo muchísimo, princesa, y que cumplas muchos años más.",
 ];
