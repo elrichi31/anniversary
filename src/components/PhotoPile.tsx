@@ -85,6 +85,7 @@ export default function PhotoPile({ items }: PhotoPileProps) {
   const stageRef = useRef<HTMLDivElement | null>(null);
   const photoRefs = useRef<(HTMLDivElement | null)[]>([]);
   const finishedRef = useRef(false);
+  const lastSizeRef = useRef<{ width: number; height: number } | null>(null);
   const [layout, setLayout] = useState<Layout | null>(null);
   const [finished, setFinished] = useState(false);
 
@@ -95,9 +96,22 @@ export default function PhotoPile({ items }: PhotoPileProps) {
     const measure = () => {
       const stage = stageRef.current;
 
-      if (stage) {
-        setLayout(computeLayout(items, stage.clientWidth, stage.clientHeight));
+      if (!stage) {
+        return;
       }
+
+      const width = stage.clientWidth;
+      const height = stage.clientHeight;
+      const last = lastSizeRef.current;
+
+      // Safari/iOS dispara "resize" al mostrar u ocultar la barra del navegador mientras
+      // se hace scroll; recalcular el layout ahi hace temblar las fotos.
+      if (last && last.width === width && Math.abs(last.height - height) < 80) {
+        return;
+      }
+
+      lastSizeRef.current = { width, height };
+      setLayout(computeLayout(items, width, height));
     };
 
     measure();
@@ -110,17 +124,28 @@ export default function PhotoPile({ items }: PhotoPileProps) {
       return;
     }
 
-    const render = () => {
-      const section = sectionRef.current;
-      const stage = stageRef.current;
+    const section = sectionRef.current;
+    const stage = stageRef.current;
 
-      if (!section || !stage) {
-        return;
-      }
+    if (!section || !stage) {
+      return;
+    }
 
-      const rect = section.getBoundingClientRect();
-      const scrollable = rect.height - stage.clientHeight;
-      const progress = scrollable > 0 ? clamp(-rect.top / scrollable) : 0;
+    let frame = 0;
+    let shown = -1;
+    let sectionTop = 0;
+    let scrollable = 0;
+
+    // Medidas estaticas: leerlas en cada scroll da valores inestables en iOS.
+    const measureSection = () => {
+      sectionTop = section.getBoundingClientRect().top + window.scrollY;
+      scrollable = section.offsetHeight - stage.clientHeight;
+    };
+
+    const targetProgress = () =>
+      scrollable > 0 ? clamp((window.scrollY - sectionTop) / scrollable) : 0;
+
+    const render = (progress: number) => {
       const u = progress * totalUnits - ENTER_SPAN;
 
       const done = progress > 0.97;
@@ -167,15 +192,42 @@ export default function PhotoPile({ items }: PhotoPileProps) {
       });
     };
 
-    // Se pinta directo en el evento de scroll: diferirlo a otro frame hace que las
-    // fotos "tiemblen" respecto al escenario fijo en Safari/iOS.
-    const onScroll = () => render();
+    // El scroll de iOS llega con tirones; se suaviza el progreso hacia su objetivo
+    // para que las fotos no tiemblen.
+    const tick = () => {
+      frame = 0;
+      const target = targetProgress();
+      shown = shown < 0 ? target : shown + (target - shown) * 0.22;
 
-    render();
-    window.addEventListener("scroll", onScroll, { passive: true });
+      if (Math.abs(target - shown) < 0.00015) {
+        shown = target;
+      } else {
+        frame = window.requestAnimationFrame(tick);
+      }
+
+      render(shown);
+    };
+
+    const schedule = () => {
+      if (!frame) {
+        frame = window.requestAnimationFrame(tick);
+      }
+    };
+
+    const onResize = () => {
+      measureSection();
+      schedule();
+    };
+
+    measureSection();
+    tick();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", onResize);
 
     return () => {
-      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", onResize);
+      window.cancelAnimationFrame(frame);
     };
   }, [layout, total, totalUnits]);
 
