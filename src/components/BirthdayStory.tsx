@@ -17,25 +17,14 @@ export default function BirthdayStory() {
 
   // Parallax del inicio: el texto sube y se desvanece al empezar a bajar.
   useEffect(() => {
-    let frame = 0;
-
     const update = () => {
-      frame = 0;
       const progress = Math.min(Math.max(window.scrollY / window.innerHeight, 0), 1);
       heroRef.current?.style.setProperty("--hero-p", progress.toFixed(3));
     };
 
-    const onScroll = () => {
-      if (!frame) {
-        frame = window.requestAnimationFrame(update);
-      }
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.cancelAnimationFrame(frame);
-    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
   }, []);
 
   useEffect(() => {
