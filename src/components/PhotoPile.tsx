@@ -110,10 +110,7 @@ export default function PhotoPile({ items }: PhotoPileProps) {
       return;
     }
 
-    let frame = 0;
-
     const render = () => {
-      frame = 0;
       const section = sectionRef.current;
       const stage = stageRef.current;
 
@@ -170,18 +167,15 @@ export default function PhotoPile({ items }: PhotoPileProps) {
       });
     };
 
-    const schedule = () => {
-      if (!frame) {
-        frame = window.requestAnimationFrame(render);
-      }
-    };
+    // Se pinta directo en el evento de scroll: diferirlo a otro frame hace que las
+    // fotos "tiemblen" respecto al escenario fijo en Safari/iOS.
+    const onScroll = () => render();
 
-    schedule();
-    window.addEventListener("scroll", schedule, { passive: true });
+    render();
+    window.addEventListener("scroll", onScroll, { passive: true });
 
     return () => {
-      window.removeEventListener("scroll", schedule);
-      window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
     };
   }, [layout, total, totalUnits]);
 

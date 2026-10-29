@@ -46,12 +46,17 @@ html {
   scroll-behavior: smooth;
 }
 
-body {
+/* Fondo en una capa fija propia: `background-attachment: fixed` hace temblar el scroll en iOS/Safari. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
   background:
     radial-gradient(circle at 15% 0%, rgba(255, 93, 143, 0.14), transparent 32%),
     radial-gradient(circle at 90% 18%, rgba(163, 183, 255, 0.12), transparent 30%),
     linear-gradient(180deg, #150c1d 0%, #0b0711 60%, #09060f 100%);
-  background-attachment: fixed;
+  pointer-events: none;
 }
 
 /* ---------- Piezas compartidas ---------- */
@@ -415,6 +420,7 @@ body {
 
 .pile-stage {
   position: sticky;
+  transform: translateZ(0);
   top: 0;
   height: 100svh;
   overflow: hidden;
@@ -710,7 +716,6 @@ body {
 /* Globos lejanos: mas chicos y difuminados, dan profundidad */
 .balloon--far {
   opacity: 0.45;
-  filter: blur(1.2px) drop-shadow(0 6px 12px rgba(0, 0, 0, 0.25));
 }
 
 .hero .balloons {
